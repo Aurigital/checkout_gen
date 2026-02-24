@@ -1,0 +1,5254 @@
+Referencia API
+El API de ONVO utiliza REST. Nuestro API tiene URLs orientadas a recursos predecibles, acepta JSON en el cuerpo de las solicitudes así como también es el formato codificado de sus respuestas.
+
+Base URL
+https://api.onvopay.com
+Podés usar el API de ONVO en modo de prueba, que no afecta los datos del modo en vivo, ni interactúa con las redes bancarias.
+
+El tipo de API Key que usés para la autenticación de la solicitud determina si la solicitud será de modo de prueba o en vivo.
+
+Los siguientes son los tipos de API Key que podés usar para la autenticación de las solicitudes:
+
+* test: API Key de modo de prueba.
+* live: API Key de modo en vivo.
+Las API Keys de modo de prueba son únicas y se generan automáticamente al crear una cuenta y están accesibles inmediatamente para que podás realizar pruebas con el API de ONVO.
+
+Las API Keys de modo en vivo también son únicas y se generan luego de que la cuenta haya completado el proceso de activación de forma satisfactoria. Una vez que la cuenta haya sido activada, podés accesarlas desde el dashboard de ONVO y utilizarlas para realizar solicitudes que interactúen con las redes bancarias.
+
+Podés ver más detalles sobre nuestros API Keys en la sección de Autenticación.
+
+Versionamiento
+El API de ONVO utiliza versionamiento de API. Las versiones de API son numeradas de forma consecutiva, comenzando desde 1.
+
+Actualmente, nuestro API está en versión 1, por lo que el URL de nuestro API con la versión actual es:
+
+Base URL con versión
+https://api.onvopay.com/v1
+Autenticación
+El API de ONVO usa API Keys para autenticar las solicitudes. Podés ver y administrar tus API Keys en el dashboard de ONVO.
+
+Las API Keys del modo de prueba tienen el prefijo onvo_test_ y las de modo en vivo tienen el prefijo onvo_live_.
+
+Todos las solicitudes al API deben hacerse mediante HTTPS. Solicitudes mediante HTTP fallarán, así como solicitudes sin autenticación.
+
+Publishable API Key
+Las Publishable API Keys están definidas para ser usadas desde código fuente client-side, donde están expuestas en el código fuente que accesible desde el navegador.
+
+Se pueden identificar fácilmente por su prefijo onvo_test_publishable_key_ o onvo_live_publishable_key_.
+
+Uno de los usos de las Publishable API Keys es para la creación de un nuevo método de pago y para autenticar nuestro SDK en tu integración.
+
+El Authorization header debe empezar con 'Bearer ' y luego el Publishable API Key que obtenés en el dashboard de ONVO.
+
+Ej:
+
+'Authorization': 'Bearer onvo_test_publishable_key_VL3ln7fwTC1DiJGvGE0H5A-XYPNJDmoGtwcduXYTRtsuKRc4d1PXEh33Ju9RZRXGJkX0KsRV5-F540ciRCQosQ'
+Security Scheme Type: HTTP
+HTTP Authorization Scheme: Bearer
+Secret API Key
+Las Secret API Keys están definidas para ser usadas desde código fuente server-side, donde deben mantenerse debidamente protegidas.
+
+Tus Secret API keys tienen muchos privilegios, mantenelas de forma segura. No compartás tus Secret API Keys ni las usés código client-side.
+
+Se pueden identificar fácilmente por su prefijo onvo_test_secret_key_ o onvo_live_secret_key_.
+
+Unos de los usos de las Secret API Keys son para la creación de una nueva intención de pago o de un nuevo cargo recurrente.
+
+El Authorization header debe empezar con 'Bearer ' y luego la Secret API Key que obtenés en el dashboard de ONVO.
+
+Ej:
+
+'Authorization': 'Bearer onvo_test_secret_key_VL3ln7fwTC1DiJGvGE0H5A-XYPNJDmoGtwcduXYTRtsuKRc4d1PXEh33Ju9RZRXGJkX0KsRV5-F540ciRCQosQ'
+Security Scheme Type: HTTP
+HTTP Authorization Scheme: Bearer
+Secret Onvo Shopper
+La llave secreta obtenida en proceso autenticación de compra de un click, se puede obtener al llamar el siguiente endpoint: https://api.onvopay.com/v1/shoppers/confirm-verification, en la respuesta seria el valor secret. Ej:
+
+'onvo-shopper': '609c2997f5cf346b1ebcf24e17e3f9ad932d943318f969f5b721'
+Security Scheme Type: HTTP
+HTTP Authorization Scheme: Header
+Errores
+ONVO utiliza códigos convencionales de respuesta HTTP para indicar la ejecución o el fallo de una solicitud al API. En general, los códigos en el rango 2xx indican un resultado satisfactorio, como la creación de un objecto o el listado de objetos previamente creados. Códigos en el rango 4xx indican un error que falló debido a la información provista (ej: La omisión de un atributo, o un valor diferente al esperado en dicho atributo así como un cargo fallido a un método de pago). Códigos en el rango 5xx indican un error en los servicios de ONVO, pero estos son atípicos.
+
+Algunos errores 4xx pueden ser manejados de forma programada, cuando son relacionados a procesamiento de cargos y similares, porque incluyen un atributo con un código de error adicional llamado apiCode.
+
+Atributos
+statusCode	
+integer
+Código HTTP del error.
+
+apiCode	
+string
+Error de código adicional presente en el objeto relacionado a errores de procesamiento de los métodos de pago.
+
+message	
+Array of strings
+Mensaje humanamente legible incluyendo más detalles acerca del error.
+
+error	
+string
+Nombre HTTP del error.
+
+
+Copy
+Expand allCollapse all
+{
+"statusCode": 400,
+"apiCode": "insufficient_funds",
+"message": [
+"The provided payment method does not have enough funds to process the transaction."
+],
+"error": "Bad Request"
+}
+Paginación
+Todos los recursos listados soportan consultas de múltiples objetos en la solicitud mediante los métodos de listado del API. Por ejemplo, podés listar todos tus clientes, listar los métodos de pago de un cliente específico, listar todas las intenciones de pago de tu cuenta así como tus cargos recurrentes.
+
+Estos métodos tienen una estructura común, tomando en cuenta al menos estos parámetros: limit, createdAt, endingBefore y startingAfter.
+
+ONVO utiliza paginación basada en cursores mediante los parámetros de endingBefore y startingAfter. Ambos parámetros utilizan IDs de objetos existentes y retornan objetos en orden cronológico inverso.
+
+El parámetro de endingBefore indica que los objetos retornados deben estar antes de un objeto con el ID especificado. El parámetro de startingAfter indica que los objetos retornados deben estar después de un objeto con el ID especificado.
+
+Estos parámetros son mutuamente excluyentes, por lo que no pueden ser utilizados a la vez. Solo uno de ellos puede ser utilizado en una solicitud.
+
+Parámetros
+createdAt	
+object or null
+Un filtro basado en el atributo de createdAt
+
+endingBefore	
+string or null
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+limit	
+number or null
+Un límite en la cantidad de objetos a retornar. Puede ser un valor entre 1 y 100, el valor por defecto es 10.
+
+startingAfter	
+string or null
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+
+Copy
+Expand allCollapse all
+{
+"createdAt": {
+"gt": "2022-06-12T21:21:10.587Z",
+"gte": "2022-06-12T21:21:10.587Z",
+"lt": "2022-06-12T21:21:10.587Z",
+"lte": "2022-06-12T21:21:10.587Z"
+},
+"endingBefore": "cl40muorw00493ndp0okzk2g3",
+"limit": 10,
+"startingAfter": "cl40muorw00493ndp0okzk2g3"
+}
+El URL completo de una solicitud de listado de objetos con paginación se ve de la siguiente forma:
+
+https://api.onvopay.com/v1/customers?createdAt[gte]=2022-06-01T21:00:00.000Z&email=customer@onvopay.com&limit=3
+Monitoreo de fraude
+Para las integraciones que sean 100% via API, se recomienda la implementación adicional de nuestra librería web para así recolectar información adicional que permita mejorar la precisión de nuestras herramientas de prevención de fraude a través de la recolección de información adicional del navegador del usuario.
+
+Esta implementación adicional es opcional, pero altamente recomendada para mejorar la precisión de nuestras herramientas de prevención de fraude.
+
+La misma no es necesaria para las integraciones que utilicen nuestros plugins, links de pago o nuestro SDK.
+
+URL
+https://js.onvopay.com/v1/
+El script debe ser incluido en el header de la página web, preferiblemente antes de cualquier otro script.
+
+<script src="https://js.onvopay.com/v1/"></script>
+Una vez incluido el script, se debe inicializar la librería con al LLAVE PÚBLICA correspondiente.
+
+En cuanto se tenga el paymentIntentId y antes de ejecutar la confirmación, se debe llamar al método startSignalSession con dicho paymentIntentId.
+
+De esta forma, la librería recolectará información adicional del navegador del usuario y la enviará a nuestra plataforma para mejorar la precisión de nuestras herramientas de prevención de fraude que será tomada en cuenta durante la solicitud de confirmación de la intención de pago.
+
+<script>
+    const onvo = ONVO(
+        'onvo_live_publishable_key_H4PG...',
+    );
+
+    onvo.startSignalSession({
+        paymentIntentId: 'clrr934wl001mdpkhw2g82rlt',
+    });
+</script>
+Autenticación 3DS
+3D Secure (3DS) es un método de autenticación que proporciona una capa adicional de autenticación para las transacciones con tarjetas de crédito, protegiendo contra actores fraudulentos. 3DS solicita a tus clientes que verifiquen su identidad con el emisor de la tarjeta durante el pago. En la mayoría de los escenarios, diriges a tu cliente a una página de verificación en el sitio web de su banco donde ingresan una contraseña vinculada a la tarjeta o un código enviado a su teléfono. Los clientes podrían reconocer este método a través de los nombres de marca de las redes de tarjetas, como Visa Secure y Mastercard Identity Check.
+
+Para las integraciones 100% via API, se presentan dos opciones para manejar la autenticación 3DS:
+
+Via Redirect: En este caso, se debe enviar la URL de redirección a la que se enviará al cliente para que complete la autenticación 3DS. Una vez completada la autenticación, el cliente será redirigido de vuelta a la URL de redirección que se haya enviado en la confirmación de la intención de pago.
+Via Modal: En este caso, mediante el uso de nuestra librería web, se puede mostrar un modal de autenticación 3DS en la misma página donde se está realizando el pago.
+En ambos escenarios, la forma de identificar si la autenticación 3DS es necesaria es a través del campo nextAction en la respuesta de la confirmación de la intención de pago así como el estado requires_action. En caso de que este campo esté presente, se debe seguir el flujo de autenticación correspondiente.
+
+Via Redirect
+Al enviar la confirmación de la intención de pago, se debe indicar la URL de redirección a la que se enviará al cliente para que complete la autenticación 3DS. Una vez completada la autenticación, el cliente será redirigido de vuelta a la URL de redirección que se haya enviado en la cconfirmación de la intención de pago con el parámetro returnUrl.
+
+{
+    "paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+    "returnUrl": "https://www.example.com/return"
+}
+En caso de que la autenticación 3DS sea necesaria, la respuesta de la confirmación de la intención de pago incluirá el campo nextAction con la URL de redirección a la que se debe enviar al cliente para que complete la autenticación 3DS.
+
+{
+    ...
+    "status": "requires_action",
+    ...
+    "nextAction": {
+        "type": "redirect_to_url",
+        "redirectToUrl": {
+            "url": "https://checkout.onvopay.com/authorize/test_clv...",
+            "returnUrl": "https://www.example.com/return"
+
+        }
+    }
+}
+Una vez que el usuario haya completado la autenticación 3DS, será redirigido de vuelta a la URL de redirección que se haya enviado en la confirmación de la intención de pago con el parámetro returnUrl y a esta URL se le agregará el parámetro payment_intent_id con el paymentIntentId correspondiente.
+
+https://www.example.com/return?payment_intent_id=cl502zv0d0127ebdp3zt27651
+En este punto, utilizando el método para obtener la intención de pago, se puede obtener el estado actual de la intención de pago y proceder con cualquier otra acción necesaria, si la transacción fue exitosa o declinada.
+
+Via Modal
+Para manejar la autenticación 3DS mediante un modal, se debe incluir el siguiente script en la página web donde se está realizando el pago.
+
+URL
+https://js.onvopay.com/v1/
+El script debe ser incluido en el header de la página web, preferiblemente antes de cualquier otro script.
+
+<script src="https://js.onvopay.com/v1/"></script>
+Una vez incluido el script, se debe inicializar la librería con al LLAVE PÚBLICA correspondiente.
+
+En cuanto se obtenga la confirmación de la intención de pago y el estado requires_action esté presente, se debe llamar al método handleNextAction de la librería de ONVO, pasando el paymentIntentId correspondiente.
+
+De esta forma, la librería de ONVO se encargará de mostrar el modal de autenticación 3DS en la misma página donde se está realizando el pago y de manejar el flujo de autenticación hasta que el usuario haya completado el mismo.
+
+Esta función retorna una promesa que se resuelve con el resultado de la autenticación 3DS. En caso de que la autenticación sea exitosa, el resultado incluirá un objeto de paymentIntent actualizado con el estado. En caso de que la autenticación sea declinada, el resultado incluirá un objeto de error con el mensaje correspondiente.
+
+❗ Importante:: Considerar que el estado de la intención de pago se debe validar, con el método para obtener la intención de pago. ya que la autenticación 3DS puede ser exitosa, pero la transacción puede ser declinada por otros motivos como fondos insuficientes o declinada por el emisor, por ejemplo.
+
+<script>
+    const onvo = ONVO(
+        'onvo_live_publishable_key_H4PG...',
+    );
+
+  onvo.handleNextAction({
+        paymentIntentId: 'clrr934wl001mdpkhw2g82rlt',
+    }).then(function(result) {
+        if (result.error) {
+            console.error(result.error);
+        } else {
+            console.log(result.paymentIntent);
+        }
+    });
+</script>
+En nuestra sección de métodos de pago de prueba, se pueden encontrar tarjetas que requieren autenticación 3DS para probar este flujo.
+
+Esta implementación adicional no necesaria para las integraciones que utilicen nuestros plugins, links de pago o nuestro SDK, ya que viene incluida en dichas soluciones.
+
+Separar la autorización y la captura
+Cuando creás un pago, podés autorizar un monto que más tarde podés capturar. Por ejemplo, los hoteles a menudo autorizan un pago completo antes de que llegue un huésped y luego capturan el dinero cuando el huésped se va.
+
+❗ Importante: Esta funcionalidad solo está disponible para pagos con tarjeta de crédito o débito y únicamente para una integración 100% via API. No está disponible para pagos con tarjeta de crédito o débito en Checkout ni en el SDK.
+
+Necesitás capturar los fondos antes de que expire la autorización. Si la autorización expira antes de que captures los fondos, los fondos se liberan y el estado de la intención de pago cambia a canceled.
+
+Para indicar que querés una autorización y captura por separado, especificá captureMethod como manual al crear el PaymentIntent.
+
+{
+    "amount": 1000,
+    "currency": "USD",
+    "captureMethod": "manual"
+}
+Este parámetro le indica a ONVO que autorice el monto pero no lo capture automáticamente, al realizar el request de confirmación de la intención de pago.
+
+Si la confirmación de la intención de pago retorna status requires_payment_method, significa que la autorización fue declinada y se debe volver a intentar. Esto puede suceder si la tarjeta no tiene fondos suficientes, por ejemplo, o si el emisor de la tarjeta declina la transacción.
+
+Después de que la intención de pago es autorizada de forma satisfactoria, el estado del PaymentIntent cambia a requires_capture. Para capturar los fondos autorizados, hacé una solicitud de captura de intención de pago. Por defecto, esta solicitud captura el monto total autorizado. Para capturar menos que el monto inicial, podés incluir el parámetro opcional de amountToCapture en la solicitud. Una captura parcial libera automáticamente el monto restante.
+
+El siguiente ejemplo demuestra cómo capturar 7.50 USD de un pago autorizado de 10.99 USD:
+
+    {
+        "amountToCapture": 750
+    }
+Si la captura es exitosa, el estado de la intención de pago cambia a succeeded. Si la captura es declinada, el estado de la intención de pago cambia a requires_payment_method y se debe iniciar una nueva autorización.
+
+Si se desea cancelar la autorización, antes de capturar los fondos, se puede hacer una solicitud de cancelación de intención de pago.
+
+Marketplaces
+Marketplaces es una funcionalidad que permite a los comercios que operan como intermediarios entre compradores y vendedores, realizar pagos a los vendedores de forma automática y segura.
+
+Crear un Marketplace
+Para crear un Marketplace en tu cuenta, solamente se debe ingresar a la sección de Marketplace en el dashboard de ONVO y hacer click en el botón "Crear".
+
+Esto te desplegará un formulario en el que deberás indicar el nombre del comercio y el porcentaje de comisión de marketplace que les cobrará, adicional a las comisiones transaccionales de ONVO y retenciones, según aplique. Estos datos se pueden editar en cualquier momento, desde el detalle de la cuenta de marketplace creada en la misma sección.
+
+Al crearse la cuenta, se generará un Account ID que deberás utilizar para identificar a los vendedores en las transacciones que realices en su nombre y un URL de onboarding para que los vendedores se registren en tu marketplace.
+
+Onboarding de Vendedores
+Es link de onboarding generado es único para cada cuenta de marketplace y es necesario que los vendedores lo completen para que puedan recibir pagos a través de tu marketplace.
+
+En este mismo proceso de onboarding, el comercio indicará las cuentas IBAN a las que se les realizarán sus respectivas liquidaciones.
+
+El link de onboarding tiene un tiempo de expiración de 7 días, pero puede ser regenerado en cualquier momento desde el detalle de la cuenta de marketplace creada en la sección de Marketplace.
+
+Al generar uno nuevo, el link anterior quedará automáticamente expirado.
+
+Una vez completado el onboarding, la cuenta de marketplace quedará automáticamente habilitada para aceptar pagos a su nombre.
+
+Flujo de Pago en Marketplaces
+Esta funcionalidad considera que la integración utiliza siempre los API Keys de la cuenta primaria del comercio, es decir, la cuenta que creó el marketplace. Las cuentas de marketplace no tienen API Keys propias. Así mismo, los métodos de pago que se utilicen en las transacciones deben ser creados en la cuenta primaria del comercio.
+
+El comercio crea una intención de pago para el comprador, utilizando sus propias API Keys, e indicando el atributo onBehaolfOf con el Account ID del comercio marketplace creado previamente.
+
+{
+    "amount": 10000,
+    "currency": "USD",
+    "onBehalfOf": "ma502zv0d0127ebdp3zt27651"
+}
+Posteriormente, el comercio confirma la intención de pago, utilizando sus propias API Keys, e indicando el paymentMethodId correspondiente.
+
+{
+    "paymentMethodId": "cl502zv0d0127ebdp3zt27651"
+}
+Si la transacción confirmada resulta en un cobro satisfactorio, se calcularán las comisiones de ONVO, retenciones (si aplican) y el cálculo de la comisión de marketplace, con base en el porcentaje indicado a ese momento en la cuenta de marketplace. Todos los montos se calcularán sobre el monto bruto.
+
+Así, por ejemplo, si el monto bruto de la transacción es de $100, la comisión de ONVO es de 3.5%, la retención es de 2% y la comisión de marketplace es de 5%, el cálculo sería el siguiente:
+
+Monto bruto: $100
+Comisión de ONVO: $3.50
+Retención: $2.00
+Monto neto: $94.50
+Comisión de marketplace: $5.00
+Monto a liquidar al vendedor: $89.50
+El monto resultante a la comisión de marketplace será depositada a la cuenta primaria del comercio, mientras que el monto neto será depositado a la cuenta del vendedor. Cada una a sus respectivas cuentas IBAN.
+
+Modos de Test y Live
+ONVO te permite crear cuentas de marketplace en modo de Test y Live, dependiendo del modo en el que se encuentre el dashboard en ese momento.
+
+Si se crea una cuenta de marketplace en modo de Test, solamente se podrán realizar transacciones de prueba y no se podrán realizar transacciones reales utilizando los API Keys de Test mode. En el caso de los onboarding de cuentas creadas en Test mode, este mostrará un mensaje para simular que el proceso de onboarding se completó y, de esta forma, poder realizar pruebas tanto con una cuenta que no lo ha completado como con una que sí.
+
+En el caso de las cuentas de marketplace creadas en modo Live, se podrán realizar transacciones reales y se podrán utilizar únicamente los API Keys de live mode.
+
+Las cuentas creadas en modo de Test no podrán ser utilizadas en modo Live y viceversa, ni tampoco se pueden cambiar de modo una vez creadas.
+
+Postman
+Run in Postman
+
+En la siguiente colección de postman puedes ver ejemplos de todos los recursos y llamados de nuestro API listados en esta documentación o la puedes descargar en formato JSON.
+
+También puedes probar nuestro API directamente con tu cuenta. Para probar la colección de postman:
+
+Dirígete al dashboard de ONVO y obtén tu LLAVE SECRETA Y LLAVE PÚBLICA de prueba ubicada en la sección de Integración a la medida.
+Ingresa a nuestra colección de postman.
+En el tab Environments selecciona el ambiente ambiente ONVO-API-ENV
+Reemplaza las variables de ambiente de SECRET_API_KEY y PUBLISHABLE_API_KEY(columna CURRENT_VALUE) por las de tu cuenta y haz click en Persist All y luego Save
+Asegurate que el ambiente ONVO-API-ENV esté seleccionado(esquina superior derecha).
+Puedes probar cualquier llamado de la colección ONVO-API y ver los resultados reflejados en el dashboard de tu cuenta.
+SDK
+Instalación
+Para iniciar, instala onvo-pay-js incluyendo el script del SDK.
+
+  <script src="https://sdk.onvopay.com/sdk.js"></script>
+Prerrequisitos
+Desde el dashboard de ONVO, obtené tu Secret y Public Keys
+Para obtener paymentIntentId necesitas crear uno mediante una solicitud de API del lado del servidor, de la siguiente manera:
+Consideraciones importantes
+El evento onSuccess se dispara cuando la solicitud de confirmación es procesada satisfactoriamente, pero se debe evaluar el estado que se incluye en el objeto resultante para determinar si el pago fue procesado satisfactoriamente (status succeeded) o declinado (status requires_payment_method). La lista completa de estados de la intención de pago se puede encontrar en la sección de Intención de Pago.
+
+El evento onError se dispara cuando se genera un HTTP error por motivos como, por ejemplo, cuando se intenta confirmar una intención de pago que ya esté en estado succeeded o canceled, así como algún error por el uso de API Keys incorrectas y, en el caso de que sea un pago con tarjeta, en respuesta a que los datos de la tarjeta estén incorrectos o dicha tarjeta no se encuentre activa.
+
+Un cargo
+Actualmente, ONVO soporta CRC y USD como monedas. También recordá enviar el monto en centavos.
+
+const { data, status } = await axios.post('https://api.onvopay.com/v1/payment-intents',
+  {
+    currency: 'USD',
+    amount: 1000,
+    description: 'my first payment intent',
+  },
+  {
+    headers: {
+      Authorization: 'Bearer you_secret_key',
+    },
+  },
+);
+
+if (status == 201) {
+  // Payment intent id to pass down to the front-end
+  console.log(data.id);
+}
+el llamado al API debe realizarse del lado del servidor, donde el secret key este seguro, posteriormente se pasa el paymentIntentId y la información necesaria al front-end para utilizar el SDK. Adicionalmente, si previamente creaste un cliente, puedes incluir el customerId para asociar la confirmación del intento de pago al cliente deseado.
+
+<body>
+<!-- Container for our ONVO component to render into -->
+<div id="container"></div>
+</body>
+
+<script>
+  // Render the component and pass down props
+  onvo.pay({
+    onError : (data) => {
+      console.log('error', data);
+    },
+    onSuccess : (data) => {
+      console.log('success', data);
+    },
+    publicKey: 'public-key',
+    paymentIntentId : "cl4de13uc457301lor2o0q9w1",
+    paymentType: "one_time",
+    customerId: "cl40wvnby1653akslv93ktgdk", // (Optional): Include to link payment-intent confirmation to customer
+  }).render('#container');
+</script>
+Cargo recurrente
+const { data, status } = await axios.post('https://api.onvopay.com/v1/subscriptions',
+  {
+    customerId: "cl40wvnby1653akslv93ktgdk",
+    paymentBehavior: "allow_incomplete",
+    items: [{
+        priceId: "cl4ojmusz299201ldilvdfs8y",
+        quantity: 1
+    }]
+  },
+  {
+    headers: {
+      Authorization: 'Bearer you_secret_key',
+    },
+  },
+);
+
+if (status == 201) {
+  // subscription id to pass down to the front-end
+  console.log(data.id);
+}
+el llamado al API debe realizarse del lado del servidor, donde el secret key este seguro, posteriormente se pasa el subscriptionId junto con el customerId y la información necesaria al front-end para utilizar el SDK.
+
+<body>
+<!-- Container for our ONVO component to render into -->
+<div id="container"></div>
+</body>
+
+<script>
+    // Render the component and pass down props
+    onvo.pay({
+      onError : (data) => {
+        console.log('error', data);
+      },
+      onSuccess : (data) => {
+        console.log('success', data);
+      },
+      publicKey: 'public-key',
+      subscriptionId : "cl4de13uc457301lor2o0q9w1",
+      paymentType: "subscription",
+      customerId: "cl40wvnby1653akslv93ktgdk",
+    }).render('#container');
+</script>
+Enviar el pago desde un elemento externo
+Para esta modalidad se requiere mandar la propiedad manualSubmit como true, esto desactiva el botón interno del formulario y expone la función submitPayment en la instancia de onvo.pay.
+
+<body>
+<!-- Container for our ONVO component to render into -->
+<div id="container"></div>
+<div id="outside">Submit Payment</div>
+</body>
+
+<script>
+  // Render the component and pass down props
+  const onvoInstance = onvo.pay({
+    onError : (data) => {
+      console.log('error', data);
+    },
+    onSuccess : (data) => {
+      console.log('success', data);
+    },
+    publicKey: 'public-key',
+    paymentIntentId : "cl4de13uc457301lor2o0q9w1",
+    paymentType: "one_time",
+    manualSubmit: true,
+    customerId: "cl40wvnby1653akslv93ktgdk", // (Optional): Include to link payment-intent confirmation to customer
+  });
+    
+  onvoInstance.render('#container');
+
+  document.getElementById("outside").addEventListener("click", () => {
+    onvoInstance.submitPayment();
+  });
+</script>
+Usando frameworks / librerias
+React
+import React from "react";
+import ReactDOM from "react-dom";
+
+const Pay = onvo.pay.driver("react", { React, ReactDOM });
+
+...
+
+return (
+  <Pay
+    onError ={(data) => {
+      console.log('error', data);
+    }}
+    onSuccess={(data) => {
+      console.log('success', data);
+    }}
+    publicKey="public-key"
+    paymentType="one_time"
+    paymentIntentId="cl4de13uc457301lor2o0q9w1"
+  />
+);
+Angular 1
+onvo.pay.driver("angular", window.angular);
+
+angular
+  .module("app", ["onvo-pay"])
+  .controller("appController", function ($scope) {
+    $scope.opts = {
+      onError : (data) => {
+    console.log('error', data);
+    return data;
+       },
+       onSuccess : (data) => {
+         console.log('success', data);
+     return data;
+       },
+       publicKey: 'public-key',
+         paymentIntentId : "cl4de13uc457301lor2o0q9w1",
+       };
+     });
+<body ng-app="app" ng-controller="appController">
+<onvo-pay props="opts"></onvo-pay>
+</body>
+Angular 2
+(function () {
+  const Pay = onvo.pay.driver("angular2", ng.core);
+  const appComponent = ng.core.Component({
+    selector: "my-app",
+    template:
+      <div id="app">
+        <pay [props]="{
+      onError: onError,
+      onSuccess: onSuccess,
+          publicKey: publicKey,
+       paymentIntentId: paymentIntentId
+    }"></pay>
+       </div>,
+     }).Class({
+    constructor: function () {
+      this.onError = (function(data) {
+        console.log(data);
+        return data;
+      }).bind(this);
+      this.onSuccess = (function(data) {
+        console.log(data);
+        return data;
+      }).bind(this);
+      this.publicKey = 'public-key';
+        this.paymentIntentId = 'cl4de13uc457301lor2o0q9w1';
+      });
+      }});
+      const appModule = ng.core.NgModule({
+    imports: [ng.platformBrowser.BrowserModule, Pay],
+    declarations: [appComponent],
+    bootstrap: [appComponent],
+       }).Class({
+         constructor: function () {},
+       });
+       document.addEventListener("DOMContentLoaded", function () {
+         ng.platformBrowserDynamic.platformBrowserDynamic().bootstrapModule(appModule);
+       });
+    })();
+Vue
+<div id="container">
+    <app></app>
+</div>
+
+<script>
+    const Pay = onvo.pay.driver("vue", window.Vue);
+
+    Vue.component("app", {
+        template: `
+            <onvo-pay 
+                :on-error="onError"
+                :on-success="onSuccess"
+                :public-key="publicKey"
+                :payment-intent-id="paymentIntentId"
+            />
+        `,
+        components: {
+            "onvo-pay": Pay,
+        },
+
+        computed: {
+            onError: function () {
+                return (data) => {
+                    console.log(data);
+                    return data;
+                }
+            },
+            onSuccess: function () {
+                return (data) => {
+                    console.log(data);
+                    return data;
+                }
+            },
+            publicKey: function () {
+                return 'public-key';
+            },
+            paymentIntentId: function () {
+                return 'cl4de13uc457301lor2o0q9w1';
+            },
+        },
+    });
+
+    const vm = new Vue({
+        el: "#container",
+    });
+</script>
+Métodos de pago de prueba
+Podés utilizar estos métodos de pago de prueba, con comportamiento predeterminado, para probar la integración que estás desarrollando. Se pueden probar escenarios de confirmación de intención de pago exitosos y fallidos. Los métodos de pago descritos en esta sección solo funcionan en modo de prueba, es decir, utilizando los API key's: LLAVE_SECRETA y LLAVE PÚBLICA que inician con el prefijo onvo_test. Si se utiliza alguno de estos métodos de pago de prueba en modo live se generará un error al intentar crear el método de pago.
+
+Tarjetas
+Para crear alguno de estos métodos de pago de prueba se debe de utilizar card en el atributo type al crear un método de pago e incluir el número deseado en el atributo number del objeto card. Además de esto:
+
+Usá cualquier fecha de expiración futura, como 12/24
+Usá cualquier CVV de tres dígitos, si es Visa o Mastercard, o un CVV de cuatro dígitos si es American Express
+Usá cualquier valor deseado en el nombre del titular de la tarjeta
+Visa Aprobada
+Marca: VISA
+Número: 4242424242424242
+Visa con Challenge 3DS
+Marca: VISA
+Número: 4000000000003220
+Mastercard Aprobada
+Marca: Mastercard
+Número: 5555555555554444
+AMEX Aprobada
+Marca: American Express
+Número: 378282246310005
+Pago declinado
+Marca: VISA
+Número: 4000000000000002
+Creación fallida por verificación inválida
+Marca: VISA
+Número: 4000000000000127
+Error en procesador de pagos con tarjeta externo
+Marca: VISA
+Número: 4000000000000119
+SINPE Móvil
+Para crear alguno de estos métodos de pago de prueba se debe de utilizar mobile_number en el atributo type al crear un método de pago e incluir el número deseado en el atributo number del objeto mobileNumber
+
+Exitoso
+Número: +50688888888
+
+Comportamiento: Cuando se utiliza este número una transferencia con el monto adecuado será simulada 15 segundos después de confirmar la intención de pago y la misma será marcada como exitosa.
+
+Exitoso con retraso
+Número: +50688884444
+
+Comportamiento: Cuando se utiliza este número una transferencia con el monto adecuado será simulada 6 minutos después de confirmar la intención de pago y la misma será marcada como exitosa. Este método es útil para probar la función de timeout y reintento.
+
+Fallido
+Número: +50688889521
+
+Comportamiento: Cuando se utiliza este número ninguna transferencia será simulada y la intención de pago no cambiará de estado.
+
+Parciales
+Número: +50688883333
+
+Comportamiento: Al utilizar este número se simulará una transferencia por el 50% del monto total, luego de 30 segundos se ingresará una nueva transferencia por el 50% restante, confirmando así la intención de pago y marcándola como exitosa. Este método es útil para probar la función de pago parciales.
+
+Zunify
+Para crear este método de pago de prueba se debe de utilizar zunify en el atributo type del request POST e incluir el número asociado en el atributo phoneNumber y de igual forma el atributo PIN del objeto zunify
+
+Exitoso
+Número: 11223344
+
+PIN: 1234
+
+Comportamiento: Cuando se utiliza este número será simulado un cargo de Zunify y 1O segundos después de confirmar la intención de pago, la misma será marcada como exitosa.
+
+Clientes
+Este objeto representa un cliente de tu negocio. Te permite crearle cargos recurrentes y darle trazabilidad a los pagos que pertenecen a un mismo cliente.
+
+El objeto Cliente
+Atributos
+id	
+string
+Identificador único del objeto.
+
+address	
+object or null
+La dirección del cliente.
+
+amountSpent	
+number
+El monto total, en USD y en centavos, acumulado de transacciones satisfactorias del cliente.
+
+description	
+string or null
+Texto arbitrario adjunto al objeto. Comúnmente útil para mostrar a usuarios.
+
+createdAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue creado el objeto.
+
+email	
+string or null <email>
+La dirección de correo electrónico del cliente.
+
+lastTransactionAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, de la última transacción satisfactoria del cliente.
+
+mode	
+string
+Enum: "test" "live"
+El modo en el que existen los datos del objeto. Ya sea test o live.
+
+name	
+string or null
+El nombre completo del cliente.
+
+phone	
+string or null
+El número de teléfono del cliente, incluyendo código de área (Ej: +50688880000)
+
+shipping	
+object or null
+La dirección de entrega a domicilio del cliente.
+
+transactionsCount	
+number
+Conteo histórico de las transacciones satisfactorias del cliente.
+
+updatedAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue actualizado por última vez el objeto.
+
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"address": {
+"city": "San José",
+"country": "CR",
+"line1": null,
+"line2": null,
+"postalCode": "10101",
+"state": "San José"
+},
+"amountSpent": 0,
+"description": "Cliente de prueba",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"email": "test_customer@onvopay.com",
+"lastTransactionAt": null,
+"mode": "test",
+"name": "John Doe",
+"phone": "+50688880000",
+"shipping": {
+"address": {},
+"name": "John Doe",
+"phone": null
+},
+"transactionsCount": 0,
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Crear un Cliente
+Retorna: Retorna el objeto de Cliente, si la creación fue satisfactoria. Retorna un error si los parámetros son inválidos (Ej: Enviando Costa Rica en lugar de CR, para el parámetro de address.country).
+
+Authorizations:
+Secret API Key
+Request Body schema: application/json
+address	
+object or null
+La dirección del cliente.
+
+description	
+string or null
+Texto arbitrario adjunto al objeto. Comúnmente útil para mostrar a usuarios.
+
+email	
+string or null <email>
+La dirección de correo electrónico del cliente.
+
+name	
+string or null
+El nombre completo del cliente.
+
+phone	
+string or null
+El número de teléfono del cliente, incluyendo código de área (Ej: +50688880000)
+
+shipping	
+object or null
+La dirección de entrega a domicilio del cliente.
+
+Respuestas
+201
+Success
+
+400
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+post
+/v1/customers
+
+Ejemplos de solicitud
+PayloadPython
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"address": {
+"city": "San José",
+"country": "CR",
+"line1": null,
+"line2": null,
+"postalCode": "10101",
+"state": "San José"
+},
+"description": "Cliente de prueba",
+"email": "test_customer@onvopay.com",
+"name": "John Doe",
+"phone": "+50688880000",
+"shipping": {
+"address": {},
+"name": "John Doe",
+"phone": null
+}
+}
+Ejemplos de respuesta
+201400401403
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"address": {
+"city": "San José",
+"country": "CR",
+"line1": null,
+"line2": null,
+"postalCode": "10101",
+"state": "San José"
+},
+"amountSpent": 0,
+"description": "Cliente de prueba",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"email": "test_customer@onvopay.com",
+"lastTransactionAt": null,
+"mode": "test",
+"name": "John Doe",
+"phone": "+50688880000",
+"shipping": {
+"address": {},
+"name": "John Doe",
+"phone": null
+},
+"transactionsCount": 0,
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Listar todos los Clientes
+Retorna una lista de tus clientes. Los clientes retornados están ordenados por la fecha de creación, con los clientes creados más recientemente apareciendo primero.
+
+Esta solicitud utiliza paginación para obtener los resultados.
+
+Authorizations:
+Secret API Key
+query Parameters
+createdAt[lt]	
+date <date-time>
+Ejemplo: createdAt[lt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor que el valor especificado.
+
+createdAt[lte]	
+date <date-time>
+Ejemplo: createdAt[lte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor o igual que el valor especificado.
+
+createdAt[gt]	
+date <date-time>
+Ejemplo: createdAt[gt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor que el valor especificado.
+
+createdAt[gte]	
+date <date-time>
+Ejemplo: createdAt[gte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor o igual que el valor especificado.
+
+email	
+string
+Ejemplo: email=customer@onvopay.com
+Identificador único del objeto.
+
+endingBefore	
+string
+Ejemplo: endingBefore=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+limit	
+number
+Ejemplo: limit=50
+Un límite en la cantidad de objetos a retornar. Puede ser un valor entre 1 y 100, el valor por defecto es 10.
+
+startingAfter	
+string
+Ejemplo: startingAfter=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+Respuestas
+200
+
+get
+/v1/customers
+
+Ejemplos de solicitud
+JSPythonC#
+
+Copy
+fetch('https://api.onvopay.com/v1/customers', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer <YOUR_API_KEY>'
+  },
+})
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+[
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"address": {},
+"amountSpent": 0,
+"description": "Cliente de prueba",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"email": "test_customer@onvopay.com",
+"lastTransactionAt": null,
+"mode": "test",
+"name": "John Doe",
+"phone": "+50688880000",
+"shipping": {},
+"transactionsCount": 0,
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+]
+Obtener un Cliente
+Sin parámetros.
+
+Retorna: Retorna el objeto de Cliente para un id válido.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+404
+
+get
+/v1/customers/{id}
+
+Ejemplos de solicitud
+JSPython
+
+Copy
+fetch('https://api.onvopay.com/v1/customers/cl40muorw00493ndp0okzk2g3', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer <YOUR_API_KEY>'
+  }
+})
+Ejemplos de respuesta
+200404
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"address": {
+"city": "San José",
+"country": "CR",
+"line1": null,
+"line2": null,
+"postalCode": "10101",
+"state": "San José"
+},
+"amountSpent": 0,
+"description": "Cliente de prueba",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"email": "test_customer@onvopay.com",
+"lastTransactionAt": null,
+"mode": "test",
+"name": "John Doe",
+"phone": "+50688880000",
+"shipping": {
+"address": {},
+"name": "John Doe",
+"phone": null
+},
+"transactionsCount": 0,
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Actualizar un Cliente
+Actualiza el cliente indicado usando los parámetros enviados. Parámetros no enviados no se cambiarán.
+
+Retorna: Retorna el objeto de Cliente, si la actualización fue satisfactoria. Retorna un error si los parámetros son inválidos (Ej: Enviando Costa Rica en lugar de CR, para el parámetro de address.country).
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Request Body schema: application/json
+address	
+object or null
+La dirección del cliente.
+
+description	
+string or null
+Texto arbitrario adjunto al objeto. Comúnmente útil para mostrar a usuarios.
+
+email	
+string or null <email>
+La dirección de correo electrónico del cliente.
+
+name	
+string or null
+El nombre completo del cliente.
+
+phone	
+string or null
+El número de teléfono del cliente, incluyendo código de área (Ej: +50688880000)
+
+shipping	
+object or null
+La dirección de entrega a domicilio del cliente.
+
+Respuestas
+201
+
+post
+/v1/customers/{id}
+
+Ejemplos de solicitud
+PayloadPython
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"address": {
+"city": "San José",
+"country": "CR",
+"line1": null,
+"line2": null,
+"postalCode": "10101",
+"state": "San José"
+},
+"description": "Cliente de prueba",
+"email": "test_customer@onvopay.com",
+"name": "John Doe",
+"phone": "+50688880000",
+"shipping": {
+"address": {},
+"name": "John Doe",
+"phone": null
+}
+}
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"address": {
+"city": "San José",
+"country": "CR",
+"line1": null,
+"line2": null,
+"postalCode": "10101",
+"state": "San José"
+},
+"amountSpent": 0,
+"description": "Cliente de prueba",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"email": "test_customer@onvopay.com",
+"lastTransactionAt": null,
+"mode": "test",
+"name": "John Doe",
+"phone": "+50688880000",
+"shipping": {
+"address": {},
+"name": "John Doe",
+"phone": null
+},
+"transactionsCount": 0,
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Borrar un Cliente
+Permanentemente elimina el cliente. No se puede deshacer y automáticamente cancela cualquier suscripción activa que pueda tener el cliente.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+
+delete
+/v1/customers/{id}
+
+Ejemplos de solicitud
+JSPython
+
+Copy
+fetch('https://api.onvopay.com/v1/customers/cl40muorw00493ndp0okzk2g3', {
+  method: 'DELETE',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer <YOUR_API_KEY>'
+  }
+})
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"address": {
+"city": "San José",
+"country": "CR",
+"line1": null,
+"line2": null,
+"postalCode": "10101",
+"state": "San José"
+},
+"amountSpent": 0,
+"description": "Cliente de prueba",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"email": "test_customer@onvopay.com",
+"lastTransactionAt": null,
+"mode": "test",
+"name": "John Doe",
+"phone": "+50688880000",
+"shipping": {
+"address": {},
+"name": "John Doe",
+"phone": null
+},
+"transactionsCount": 0,
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Obtener los métodos de pago de un Cliente
+Retorna una lista de los métodos de pago asociados a un Cliente específico.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+404
+
+get
+/v1/customers/{id}/payment-methods
+
+Ejemplos de solicitud
+JS
+
+Copy
+fetch('https://api.onvopay.com/v1/customers/cl40muorw00493ndp0okzk2g3/payment-methods', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer <YOUR_API_KEY>'
+  }
+})
+Ejemplos de respuesta
+200404
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+[
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billing": {},
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"status": "active",
+"type": "card",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+]
+Métodos de pago
+Los objetos de Método de pago representan los instrumentos de cobro de tus clientes. Podés usarlos en conjunto con Intenciones de pago
+
+El objeto Método de pago
+Atributos
+id	
+string
+Identificador único del objeto.
+
+billing	
+object or null
+La dirección de facturación del método de pago.
+
+card	
+object or null
+La información sobre la tarjeta de crédito o débito, cuando el tipo de método de pago sea card.
+
+createdAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue creado el objeto.
+
+customerId	
+string or null
+Identificador único del cliente al que pertenece el método de pago.
+
+mobileNumber	
+object or null
+La información sobre el número asociado a SINPE Móvil, cuando el tipo de método de pago es mobile_number.
+
+mode	
+string
+Enum: "test" "live"
+El modo en el que existen los datos del objeto. Ya sea test o live.
+
+status	
+string
+Enum: "active" "detached" "suspended"
+El estado actual del método de pago. Puede ser uno de los siguientes:
+
+Activo: active: Es el estado en el que los métodos de pago pueden ser utilizados para realizar transacciones. Es el estado por defecto para los métodos de pago de tipo mobile_number y card.
+Desconectado: detached. Es el estado en el que quedan los métodos de pago luego de haber sido removidos de un cliente. Este estatus es irreversible y el método de pago no se puede volver a utilizar.
+Suspendido: suspended. Es un estado para los métodos de pago que han recibido una suspensión por parte de la plataforma. Estos métodos de pago no pueden ser utilizados para realizar transacciones.
+type	
+string
+Enum: "card" "mobile_number"
+El tipo de método de pago. Puede ser uno de los siguientes:
+
+Tarjetas de crédito/débito VISA o MASTERCARD: card
+SINPE Móvil: mobile_number
+updatedAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue actualizado por última vez el objeto.
+
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billing": {
+"address": {},
+"name": "John Doe",
+"phone": null
+},
+"card": {
+"brand": "mastercard",
+"expMonth": 12,
+"expYear": 2024,
+"last4": "4242"
+},
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"mobileNumber": {
+"maskedNumber": "+5068*****96"
+},
+"mode": "test",
+"status": "active",
+"type": "card",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Crear un Método de pago
+Crea un objeto de Método de pago. El tipo de método de pago indicado determina cuál objeto respectivo debe incluirse con los atributos específicos. Por ejemplo, para crear un método de pago SINPE Móvil, el atributo de type debe ser igual a mobile_number y el objeto de mobileNumber debe incluir sus respectivos atributos requeridos, mientras que los objetos de card, y zunify deben omitirse.
+
+En el ejemplo de la solicitud, mostramos los cuatro posibles objetos con sus respectivos atributos completados únicamente para no omitir el ejemplo de alguno de ellos, pero en la solicitud solo se debe incluir uno de los tres, según sea el tipo indicado.
+
+En el ejemplo de respuesta, mostramos el objeto de método de pago creado basado en el tipo mobile_number.
+
+Authorizations:
+Publishable API Key
+Request Body schema: application/json
+billing	
+object or null
+La dirección de facturación del método de pago.
+
+card	
+object or null
+La información sobre la tarjeta de crédito o débito. Cuando el tipo de método de pago sea card, este objeto será requerido.
+
+customerId	
+string or null
+Identificador único del cliente al que pertenece el método de pago. Si no se especifica, se creará un nuevo cliente y se asociará al método de pago automáticamente.
+
+customer	
+object or null
+La información sobre el cliente. Utilizado para crear un nuevo cliente y asociarlo al método de pago en la misma petición. Si se especifica, no se debe especificar el campo customerId.
+
+mobileNumber	
+object or null
+La información sobre el número asociado a SINPE Móvil. Cuando el tipo de método de pago sea mobile_number, este objeto será requerido.
+
+zunify	
+object or null
+La información sobre el número asociado a Zunify. Cuando el tipo de método de pago sea zunify, este objeto será requerido.
+
+type	
+string
+Enum: "card" "mobile_number" "zunify"
+El tipo de método de pago. Puede ser uno de los siguientes:
+
+Tarjetas de crédito/débito VISA o MASTERCARD: card
+SINPE Móvil: mobile_number
+Zunify: zunify
+Cada tipo de método de pago tiene sus propiedades específicas representados en los objetos de card, mobileNumber y zunify, respectivamente. Cada objeto correspondiente será requerido, según el tipo de método de pago, y los restantes objetos para los otros tipos de método de pago deben de ser omitidos o se retornará un error de validación.
+
+Respuestas
+201
+Success
+
+400,
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+post
+/v1/payment-methods
+
+Ejemplos de solicitud
+PayloadPythonRubyPHPC#
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"billing": {
+"address": {},
+"name": "John Doe",
+"phone": null,
+"email": null,
+"idType": "national_natural_person",
+"idNumber": "01-1393-1919"
+},
+"card": {
+"number": "4242424242424242",
+"expMonth": 12,
+"expYear": 2024,
+"cvv": "123",
+"holderName": "John Doe"
+},
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"customer": {
+"name": "John Doe",
+"email": "test_customer@onvopay.com",
+"phone": "+50688880000"
+},
+"mobileNumber": {
+"identification": "01-1393-1919",
+"identificationType": 0,
+"number": "+50688880000"
+},
+"zunify": {
+"pin": 1234,
+"phoneNumber": "11223344"
+},
+"type": "card"
+}
+Ejemplos de respuesta
+201400401403
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billing": {
+"address": {},
+"name": "John Doe",
+"phone": null
+},
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"status": "active",
+"type": "card",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Listar todos los Métodos de pago
+Retorna una lista de los métodos de pago asociados a tu cuenta.
+
+Esta solicitud utiliza paginación para obtener los resultados.
+
+Authorizations:
+Publishable API Key
+query Parameters
+createdAt[lt]	
+date <date-time>
+Ejemplo: createdAt[lt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor que el valor especificado.
+
+createdAt[lte]	
+date <date-time>
+Ejemplo: createdAt[lte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor o igual que el valor especificado.
+
+createdAt[gt]	
+date <date-time>
+Ejemplo: createdAt[gt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor que el valor especificado.
+
+createdAt[gte]	
+date <date-time>
+Ejemplo: createdAt[gte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor o igual que el valor especificado.
+
+endingBefore	
+string
+Ejemplo: endingBefore=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+limit	
+number
+Ejemplo: limit=50
+Un límite en la cantidad de objetos a retornar. Puede ser un valor entre 1 y 100, el valor por defecto es 10.
+
+startingAfter	
+string
+Ejemplo: startingAfter=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+Respuestas
+200
+
+get
+/v1/payment-methods
+
+Ejemplos de solicitud
+JSPythonC#
+
+Copy
+fetch('https://api.onvopay.com/v1/payment-methods', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer <YOUR_API_KEY>'
+  },
+})
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+[
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billing": {},
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"status": "active",
+"type": "card",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+]
+Desconectar un Método de pago
+Permanentemente desconecta un método de pago de un cliente. Una vez realizado, el método de pago no puede volver a ser usado para un cobro ni volver a ser asociado a un cliente.
+
+Authorizations:
+Secret API Key
+Respuestas
+200
+
+post
+/v1/payment-methods/{id}/detach
+
+Ejemplos de solicitud
+JSPython
+
+Copy
+fetch('https://api.onvopay.com/v1/payment-methods/cl40muorw00493ndp0okzk2g3/detach', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer <YOUR_API_KEY>'
+  }
+})
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billing": {
+"address": {},
+"name": "John Doe",
+"phone": null
+},
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"status": "active",
+"type": "card",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Obtener un Método de pago
+Retorna el objeto de Método de pago para un id válido.
+
+Authorizations:
+Publishable API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+404
+
+get
+/v1/payment-methods/{id}
+
+Ejemplos de solicitud
+JSPython
+
+Copy
+fetch('https://api.onvopay.com/v1/payment-methods/cl40muorw00493ndp0okzk2g3', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer <YOUR_API_KEY>'
+  }
+})
+Ejemplos de respuesta
+200404
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billing": {
+"address": {},
+"name": "John Doe",
+"phone": null
+},
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"status": "active",
+"type": "card",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Actualizar un Método de pago
+Actualiza el método de pago indicado usando los parámetros enviados. Parámetros no enviados no se cambiarán.
+
+Para los métodos de pago de tipo card, opcionalmente, se puede indicar el CVV dentro del objeto card para re-tokenizar la tarjeta.
+
+Si se envía el CVV, se realizará una validación de la tarjeta, incluyendo un cargo de monto 0.00 para verificar que la tarjeta es válida. Si esta validación falla, se recibirá un BadRequest con el código cards.invalid_card_info.
+
+En test mode, para este request, se puede simular este error indicando el CVV 987.
+
+Ejemplo de error
+{
+    "statusCode": 400,
+    "type": "OnvoAPIError",
+    "code": "cards.invalid_card_info",
+    "message": "There was an error with the card information provided. Please review card number, expiration date and cvv",
+    "path": "/v1/payment-methods/cly78vk1n001wpyofurhq8001",
+    "timestamp": "2024-01-01T12:30:00.000"
+}
+Authorizations:
+Publishable API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Request Body schema: application/json
+billing	
+object or null
+La dirección de facturación del método de pago.
+
+card	
+object or null
+En caso de que el tipo de método de pago sea card, se puede utilizar este objeto para re-tokenizar la tarjeta.
+
+Respuestas
+201
+
+post
+/v1/payment-methods/{id}
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"billing": {
+"address": {},
+"name": "John Doe",
+"phone": null
+},
+"card": {
+"cvv": "123"
+}
+}
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billing": {
+"address": {},
+"name": "John Doe",
+"phone": null
+},
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"status": "active",
+"type": "card",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Intenciones de pago
+Una Intención de pago te guía a traves del proceso de cobro de tu cliente. Te recomendamos que utilicés exactamente una Intención de pago para cada orden de compra de un cliente en tu sistema. Podés usar la intención de pago como referencia, y luego, y ver el historial de intentos de pago hechos en esa intención en particular.
+
+Una Intención de pago transiciona a través de múltiples estados durante su ciclo de vida.
+
+El objeto Intención de pago
+Atributos
+id	
+string
+Identificador único del objeto.
+
+amount	
+integer
+El monto a cobrar en la intención de pago. Debe ser un número entero positivo representando el monto en la menor denominación posible de la moneda (centavos para el caso de USD y céntimos para CRC). Por ejemplo, si la moneda es USD y el monto a cobrar es $1.50, el valor indicado debe ser 150. De igual forma, si la moneda es CRC y el monto a cobrar es ₡2,100.89, el valor indicado debe ser 210089. El monto mínimo es $0.50 para USD y el correspondiente equivalente en colones para CRC.
+
+baseAmount	
+integer
+El correspondiente monto en USD del monto indicado en amount según el tipo de cambio al momento de su creación.
+
+exchangeRate	
+float
+El tipo de cambio utilizado para calcular el valor asignado a baseAmount.
+
+capturableAmount	
+integer
+El monto capturable de la intención de pago. Al momento de crear la intención de pago, este valor es igual al monto indicado en amount.
+
+receivedAmount	
+integer
+El monto recibido de la intención de pago. Este valor es igual al monto indicado en amount si la intención de pago se encuentra en estado succeeded. El monto puede variar si se realizar un reembolso parcial o total de la intención de pago, así como una captura por un monto menor al monto autorizado.
+
+captureMethod	
+string or null
+Default: "automatic"
+Enum: "manual" "automatic"
+Atributo opcional para indicar el tipo de captura que se desea realizar. Puede ser manual o automatic. Si no se indica, se utilizará el valor por defecto automatic. Intenciones de pago con captura manual solo se pueden confirmar con métodos de pago de tipo card. Una vez confirmada, la intención de pago retornará el estado requires_capture y deberá ser capturada manualmente. Si no se completa la captura en un máximo de 30 días, los fondos serán liberados de vuelta al cliente.
+
+currency	
+string
+Enum: "USD" "CRC"
+El tipo de moneda de la intención de pago.
+
+createdAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue creado el objeto.
+
+customerId	
+string or null
+Identificador único del cliente al que pertenece la intención de pago.
+
+description	
+string or null
+Texto arbitrario adjunto al objeto. Comúnmente útil para mostrar a usuarios.
+
+charges	
+Array of objects
+Lista de cargos asociados a la intención de pago. Cada cargo representa un intento de cobro con su respectivo estado.
+
+lastPaymentError	
+object or null
+Objeto que contiene información sobre el último error ocurrido al intentar cobrar la intención de pago.
+
+mode	
+string
+Enum: "test" "live"
+El modo en el que existen los datos del objeto. Ya sea test o live.
+
+status	
+string
+Enum: "requires_confirmation" "requires_payment_method" "requires_action" "succeeded" "refunded" "canceled"
+El estado actual de la intención de pago. Puede ser uno de los siguientes:
+
+Requiere confirmación: requires_confirmation. El estado por defecto de las intenciones de pago al ser creadas. A la espera de que se confirme para proceder con el intento de cobro.
+Requiere método de pago: requires_payment_method. Este estado se produce luego de realizar una confirmación de la intención de pago usando un método de pago cuyo cobro fue fallido. El cliente debe verificar que el método de pago es válido y que el cliente tiene suficientes fondos para realizar el cobro o indicar uno diferente.
+Requiere una acción: requires_action. Este estado es indicado cuando una intención de pago es confirmada, pero el método de pago requiere de una acción adicional para ser procesado. Por ejemplo, cuando se requiere de una autenticación 3DS para completar el cobro a través de una tarjeta de crédito o débito.
+Exitoso: succeeded. El estado que se produce luego de que la intención de pago haya sido cobrada y procesada satisfactoriamente.
+Reembolsado: refunded. El estado que se produce luego de que la intención de pago haya sido reembolsada mediante el dashboard de ONVO.
+Cancelado: canceled. El estado que se produce luego de que la intención de pago haya sido cancelada mediante el método de cancelar intención de pago
+updatedAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue actualizado por última vez el objeto.
+
+metadata	
+object or null
+Objeto opcional que puede ser utilizado para guardar información adicional sobre la intención de pago. Puede ser útil para guardar información como el ID de una orden de compra, el ID de un carrito de compras, etc. Podés especificar hasta 50 pares de llave-valor. Las llaves y valores deben ser de tipo string. El nombre de las llaves debe de tener una longitud máxima de 40 caracteres y los valores una longitud máxima de 500 caracteres.
+
+officeId	
+string or null
+Identificador opcional de la sede a la que pertenece la intención de pago.
+
+onBehalfOf	
+string or null
+Identificador opcional de la cuenta de marketplace a la que pertenece la intención de pago.
+
+nextAction	
+object
+Objeto que contiene la información de la siguiente acción requerida para procesar la intención de pago. Este objeto es retornado en caso de que la intención de pago requiera de una acción adicional para ser procesada como autenticación 3DS.
+
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"amount": 150,
+"baseAmount": 102676,
+"exchangeRate": 0.0015,
+"capturableAmount": 150,
+"receivedAmount": 150,
+"captureMethod": "automatic",
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Intención de pago de prueba",
+"charges": [
+{}
+],
+"lastPaymentError": {
+"code": "Declinado",
+"message": "Fondos insuficientes",
+"type": "processing_error"
+},
+"mode": "test",
+"status": "requires_confirmation",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"metadata": {
+"orderId": "123456789",
+"cartId": "987654321"
+},
+"officeId": "cl502zv0d0127ebdp3zt27651",
+"onBehalfOf": "cl502zv0d0127ebdp3zt27651",
+"nextAction": {
+"type": "redirect_to_url",
+"redirectToUrl": {}
+}
+}
+Crear una Intención de pago
+Authorizations:
+Secret API Key
+Request Body schema: application/json
+amount	
+integer
+El monto a cobrar en la intención de pago. Debe ser un número entero positivo representando el monto en la menor denominación posible de la moneda (centavos para el caso de USD y céntimos para CRC). Por ejemplo, si la moneda es USD y el monto a cobrar es $1.50, el valor indicado debe ser 150. De igual forma, si la moneda es CRC y el monto a cobrar es ₡2,100.89, el valor indicado debe ser 210089. El monto mínimo es $0.50 para USD y el correspondiente equivalente en colones para CRC.
+
+captureMethod	
+string or null
+Default: "automatic"
+Enum: "manual" "automatic"
+Atributo opcional para indicar el tipo de captura que se desea realizar. Puede ser manual o automatic. Si no se indica, se utilizará el valor por defecto automatic. Intenciones de pago con captura manual solo se pueden confirmar con métodos de pago de tipo card. Una vez confirmada, la intención de pago retornará el estado requires_capture y deberá ser capturada manualmente. Si no se completa la captura en un máximo de 30 días, los fondos serán liberados de vuelta al cliente.
+
+currency	
+string
+Enum: "USD" "CRC"
+El tipo de moneda de la intención de pago.
+
+customerId	
+string or null
+Identificador único del cliente al que pertenece la intención de pago.
+
+description	
+string or null
+Texto arbitrario adjunto al objeto. Comúnmente útil para mostrar a usuarios.
+
+metadata	
+object or null
+Objeto opcional que puede ser utilizado para guardar información adicional sobre la intención de pago. Puede ser útil para guardar información como el ID de una orden de compra, el ID de un carrito de compras, etc. Podés especificar hasta 50 pares de llave-valor. Las llaves y valores deben ser de tipo string. El nombre de las llaves debe de tener una longitud máxima de 40 caracteres y los valores una longitud máxima de 500 caracteres.
+
+officeId	
+string or null
+Identificador opcional de la sede a la que pertenece la intención de pago.
+
+onBehalfOf	
+string or null
+Identificador opcional de la cuenta de marketplace a la que pertenece la intención de pago.
+
+Respuestas
+201
+Success
+
+400
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+post
+/v1/payment-intents
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"amount": 150,
+"captureMethod": "automatic",
+"currency": "USD",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Intención de pago de prueba",
+"metadata": {
+"orderId": "123456789",
+"cartId": "987654321"
+},
+"officeId": "cl502zv0d0127ebdp3zt27651",
+"onBehalfOf": "cl502zv0d0127ebdp3zt27651"
+}
+Ejemplos de respuesta
+201400401403
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"amount": 150,
+"baseAmount": 102676,
+"exchangeRate": 0.0015,
+"capturableAmount": 150,
+"receivedAmount": 150,
+"captureMethod": "automatic",
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Intención de pago de prueba",
+"charges": [
+{}
+],
+"lastPaymentError": {
+"code": "Declinado",
+"message": "Fondos insuficientes",
+"type": "processing_error"
+},
+"mode": "test",
+"status": "requires_confirmation",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"metadata": {
+"orderId": "123456789",
+"cartId": "987654321"
+},
+"officeId": "cl502zv0d0127ebdp3zt27651",
+"onBehalfOf": "cl502zv0d0127ebdp3zt27651",
+"nextAction": {
+"type": "redirect_to_url",
+"redirectToUrl": {}
+}
+}
+Listar todas las Intenciones de pago
+Retorna una lista de tus intenciones de pago. Las intenciones de pago retornadas están ordenadas por la fecha de creación, con las intenciones de pago creadas más recientemente apareciendo primero.
+
+Esta solicitud utiliza paginación para obtener los resultados.
+
+Authorizations:
+Secret API Key
+query Parameters
+createdAt[lt]	
+date <date-time>
+Ejemplo: createdAt[lt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor que el valor especificado.
+
+createdAt[lte]	
+date <date-time>
+Ejemplo: createdAt[lte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor o igual que el valor especificado.
+
+createdAt[gt]	
+date <date-time>
+Ejemplo: createdAt[gt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor que el valor especificado.
+
+createdAt[gte]	
+date <date-time>
+Ejemplo: createdAt[gte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor o igual que el valor especificado.
+
+endingBefore	
+string
+Ejemplo: endingBefore=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+limit	
+number
+Ejemplo: limit=50
+Un límite en la cantidad de objetos a retornar. Puede ser un valor entre 1 y 100, el valor por defecto es 10.
+
+startingAfter	
+string
+Ejemplo: startingAfter=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+Respuestas
+200
+
+get
+/v1/payment-intents/account
+
+Ejemplos de solicitud
+JSPythonC#
+
+Copy
+fetch('https://api.onvopay.com/v1/payment-intents/account', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer <YOUR_API_KEY>'
+  },
+})
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+[
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"amount": 150,
+"baseAmount": 102676,
+"exchangeRate": 0.0015,
+"capturableAmount": 150,
+"receivedAmount": 150,
+"captureMethod": "automatic",
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Intención de pago de prueba",
+"charges": [],
+"lastPaymentError": {},
+"mode": "test",
+"status": "requires_confirmation",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"metadata": {},
+"officeId": "cl502zv0d0127ebdp3zt27651",
+"onBehalfOf": "cl502zv0d0127ebdp3zt27651",
+"nextAction": {}
+}
+]
+Obtener una Intención de pago
+Retorna el objeto de una Intención de pago para un id válido.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+404
+
+get
+/v1/payment-intents/{id}
+
+Ejemplos de respuesta
+200404
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"amount": 150,
+"baseAmount": 102676,
+"exchangeRate": 0.0015,
+"capturableAmount": 150,
+"receivedAmount": 150,
+"captureMethod": "automatic",
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Intención de pago de prueba",
+"charges": [
+{}
+],
+"lastPaymentError": {
+"code": "Declinado",
+"message": "Fondos insuficientes",
+"type": "processing_error"
+},
+"mode": "test",
+"status": "requires_confirmation",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"metadata": {
+"orderId": "123456789",
+"cartId": "987654321"
+},
+"officeId": "cl502zv0d0127ebdp3zt27651",
+"onBehalfOf": "cl502zv0d0127ebdp3zt27651",
+"nextAction": {
+"type": "redirect_to_url",
+"redirectToUrl": {}
+}
+}
+Actualizar una Intención de pago
+Actualiza la las propiedades de un objeto de Intención de pago sin confirmar. Intenciones de pago con estado succeeded o canceled no pueden actualizarse.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Request Body schema: application/json
+amount	
+integer
+El monto a cobrar en la intención de pago. Debe ser un número entero positivo representando el monto en la menor denominación posible de la moneda (centavos para el caso de USD y céntimos para CRC). Por ejemplo, si la moneda es USD y el monto a cobrar es $1.50, el valor indicado debe ser 150. De igual forma, si la moneda es CRC y el monto a cobrar es ₡2,100.89, el valor indicado debe ser 210089. El monto mínimo es $0.50 para USD y el correspondiente equivalente en colones para CRC.
+
+captureMethod	
+string or null
+Default: "automatic"
+Enum: "manual" "automatic"
+Atributo opcional para indicar el tipo de captura que se desea realizar. Puede ser manual o automatic. Si no se indica, se utilizará el valor por defecto automatic. Intenciones de pago con captura manual solo se pueden confirmar con métodos de pago de tipo card. Una vez confirmada, la intención de pago retornará el estado requires_capture y deberá ser capturada manualmente. Si no se completa la captura en un máximo de 30 días, los fondos serán liberados de vuelta al cliente.
+
+currency	
+string
+Enum: "USD" "CRC"
+El tipo de moneda de la intención de pago.
+
+customerId	
+string or null
+Identificador único del cliente al que pertenece la intención de pago.
+
+description	
+string or null
+Texto arbitrario adjunto al objeto. Comúnmente útil para mostrar a usuarios.
+
+metadata	
+object or null
+Objeto opcional que puede ser utilizado para guardar información adicional sobre la intención de pago. Puede ser útil para guardar información como el ID de una orden de compra, el ID de un carrito de compras, etc. Podés especificar hasta 50 pares de llave-valor. Las llaves y valores deben ser de tipo string. El nombre de las llaves debe de tener una longitud máxima de 40 caracteres y los valores una longitud máxima de 500 caracteres.
+
+officeId	
+string or null
+Identificador opcional de la sede a la que pertenece la intención de pago.
+
+onBehalfOf	
+string or null
+Identificador opcional de la cuenta de marketplace a la que pertenece la intención de pago.
+
+Respuestas
+201
+
+post
+/v1/payment-intents/{id}
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"amount": 150,
+"captureMethod": "automatic",
+"currency": "USD",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Intención de pago de prueba",
+"metadata": {
+"orderId": "123456789",
+"cartId": "987654321"
+},
+"officeId": "cl502zv0d0127ebdp3zt27651",
+"onBehalfOf": "cl502zv0d0127ebdp3zt27651"
+}
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"amount": 150,
+"baseAmount": 102676,
+"exchangeRate": 0.0015,
+"capturableAmount": 150,
+"receivedAmount": 150,
+"captureMethod": "automatic",
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Intención de pago de prueba",
+"charges": [
+{}
+],
+"lastPaymentError": {
+"code": "Declinado",
+"message": "Fondos insuficientes",
+"type": "processing_error"
+},
+"mode": "test",
+"status": "requires_confirmation",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"metadata": {
+"orderId": "123456789",
+"cartId": "987654321"
+},
+"officeId": "cl502zv0d0127ebdp3zt27651",
+"onBehalfOf": "cl502zv0d0127ebdp3zt27651",
+"nextAction": {
+"type": "redirect_to_url",
+"redirectToUrl": {}
+}
+}
+Confirmar una Intención de pago
+Confirma que tu cliente va a pagar esta intención de pago con el método de pago indicado. Esta solicitud intentará cobrar el monto de la intención de pago al método de pago indicado.
+
+Si el intento de cobro falla, la intención de pago seguirá en estado requires_payment_method. Si el intento de cobro es satisfactorio, la intención de pago cambiará a estado succeeded.
+
+Authorizations:
+Publishable API KeySecret Onvo Shopper
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Request Body schema: application/json
+paymentMethodId	
+string
+Identificador único del objeto de Método de pago previamente creado y asociado al mismo Cliente.
+
+returnUrl	
+string or null
+URL a la que se redirigirá al cliente luego de completar la autenticación 3DS.
+
+Respuestas
+201
+
+post
+/v1/payment-intents/{id}/confirm
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+{
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+"returnUrl": "https://www.example.com/return"
+}
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"amount": 150,
+"baseAmount": 102676,
+"exchangeRate": 0.0015,
+"capturableAmount": 150,
+"receivedAmount": 150,
+"captureMethod": "automatic",
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Intención de pago de prueba",
+"charges": [
+{}
+],
+"lastPaymentError": {
+"code": "Declinado",
+"message": "Fondos insuficientes",
+"type": "processing_error"
+},
+"mode": "test",
+"status": "requires_confirmation",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"metadata": {
+"orderId": "123456789",
+"cartId": "987654321"
+},
+"officeId": "cl502zv0d0127ebdp3zt27651",
+"onBehalfOf": "cl502zv0d0127ebdp3zt27651",
+"nextAction": {
+"type": "redirect_to_url",
+"redirectToUrl": {}
+}
+}
+Capturar una Intención de pago
+Captura una intención de pago que esté en estado requires_capture. Una vez capturada, una intención de pago no se puede cancelar.
+
+Si el pago se captura con éxito, la intención de pago se marca como succeeded. Si la captura es declinada por el emisor de la tarjeta, la intención de pago se marca como requires_payment_method y se debe crear una nueva intención de pago.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Request Body schema: application/json
+amountToCapture	
+number or null
+Atributo opcional, si se desea capturar un monto menor al autorizado. Si no se envía, se utilizara el monto capturable de la intención de pago. Debe ser un número entero positivo representando el monto en la menor denominación posible de la moneda (centavos para el caso de USD y céntimos para CRC).
+
+Respuestas
+201
+
+post
+/v1/payment-intents/{id}/capture
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+{
+"amountToCapture": 1099
+}
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"amount": 150,
+"baseAmount": 102676,
+"exchangeRate": 0.0015,
+"capturableAmount": 150,
+"receivedAmount": 150,
+"captureMethod": "automatic",
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Intención de pago de prueba",
+"charges": [
+{}
+],
+"lastPaymentError": {
+"code": "Declinado",
+"message": "Fondos insuficientes",
+"type": "processing_error"
+},
+"mode": "test",
+"status": "requires_confirmation",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"metadata": {
+"orderId": "123456789",
+"cartId": "987654321"
+},
+"officeId": "cl502zv0d0127ebdp3zt27651",
+"onBehalfOf": "cl502zv0d0127ebdp3zt27651",
+"nextAction": {
+"type": "redirect_to_url",
+"redirectToUrl": {}
+}
+}
+Cancelar una Intención de pago
+Un objeto de Intención de pago puede cancelarse cuando está en uno de estos estados: requires_payment_method o requires_capture.
+
+Si la intención de pago está en estado requires_capture, al solicitar la cancelación, se liberarán los fondos autorizados automáticamente.
+
+Al cancelar una Intención de pago, el estado de la Intención de pago cambia a canceled. No se podrán realizar nuevos intentos de cobro ni actualizarse.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+201
+
+post
+/v1/payment-intents/{id}/cancel
+
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"amount": 150,
+"baseAmount": 102676,
+"exchangeRate": 0.0015,
+"capturableAmount": 150,
+"receivedAmount": 150,
+"captureMethod": "automatic",
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Intención de pago de prueba",
+"charges": [
+{}
+],
+"lastPaymentError": {
+"code": "Declinado",
+"message": "Fondos insuficientes",
+"type": "processing_error"
+},
+"mode": "test",
+"status": "requires_confirmation",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"metadata": {
+"orderId": "123456789",
+"cartId": "987654321"
+},
+"officeId": "cl502zv0d0127ebdp3zt27651",
+"onBehalfOf": "cl502zv0d0127ebdp3zt27651",
+"nextAction": {
+"type": "redirect_to_url",
+"redirectToUrl": {}
+}
+}
+Reembolsos
+Los reembolsos son objetos que permiten devolver el monto total o parcial de un cargo previamente realizado a la tarjeta de crédito o débito del cliente. Los fondos se devuelven a la tarjeta utilizada para realizar el pago original.
+
+Esta funcionalidad está disponible solamente para cargos realizados con el método de pago card y que no hayan sido liquidados aún. En caso de intentar realizar un reembolso sobre un cargo liquidado, se retornará un error. Para tramitar un reembolso de un cargo que ya ha sido liquidado, se debe solicitar a nuestro equipo de Operaciones.
+
+Cada cargo permite solo un reembolso, ya sea total o parcial. Si se realiza un reembolso parcial sobre un cargo, dicho cargo ya no podrá ser reembolsado nuevamente.
+
+El objeto Reembolso
+Atributos
+id	
+string
+Identificador único del objeto.
+
+amount	
+integer or null
+El monto del reembolso. Si no se indica un monto en la creación, se reembolsará el monto total de la intención de pago. El monto no puede ser mayor al monto de la intención de pago. Debe ser un número entero positivo representando el monto en la menor denominación posible de la moneda (centavos para el caso de USD y céntimos para CRC)
+
+currency	
+string
+Enum: "USD" "CRC"
+El tipo de moneda de la intención de pago.
+
+createdAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue creado el objeto.
+
+paymentIntentId	
+string
+Identificador único de la intención de pago a la que pertenece el reembolso.
+
+description	
+string or null
+Texto arbitrario adjunto al objeto. Comúnmente útil para mostrar a usuarios.
+
+mode	
+string
+Enum: "test" "live"
+El modo en el que existen los datos del objeto. Ya sea test o live.
+
+status	
+string
+Enum: "pending" "succeeded" "failed"
+El estado del reembolso. Puede ser uno de los siguientes:
+
+Pendiente: pending. Estado de un reembolso en curso.
+Satisfactorio: succeeded. Este estado se produce luego de el reembolso fue procesado de forma satisfactoria.
+Fallido: failed. Estado resultante si el reembolso no pudo se procesado.
+reason	
+string or null
+Default: "requested_by_customer"
+Enum: "requested_by_customer" "fraudulent" "duplicate"
+La razón del reembolso. Si no se indica una razón, se utilizará la razón por defecto. Puede ser uno de los siguientes:
+
+Reembolso por solicitud del cliente: requested_by_customer. El reembolso fue solicitado por el cliente.
+Reembolso por fraude: fraudulent. El reembolso fue solicitado por el cliente debido a un fraude.
+Duplicado: duplicate. El reembolso fue solicitado por el cliente debido a un cobro duplicado.
+updatedAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue actualizado por última vez el objeto.
+
+failureReason	
+string or null
+En caso de fallar el reembolso, se incluirá el motivo del fallo.
+
+
+Copy
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"amount": 150,
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"paymentIntentId": "cl502zv0d0127ebdp3zt27651",
+"description": "Reembolso de prueba",
+"mode": "test",
+"status": "pending",
+"reason": "requested_by_customer",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"failureReason": "declined"
+}
+Crear un Reembolso
+Crea un objeto de Reembolso
+
+Authorizations:
+Secret API Key
+Request Body schema: application/json
+amount	
+integer or null
+El monto del reembolso. Si no se indica un monto en la creación, se reembolsará el monto total de la intención de pago. El monto no puede ser mayor al monto de la intención de pago. Debe ser un número entero positivo representando el monto en la menor denominación posible de la moneda (centavos para el caso de USD y céntimos para CRC)
+
+paymentIntentId	
+string
+Identificador único de la intención de pago a la que pertenece el reembolso.
+
+description	
+string or null
+Texto arbitrario adjunto al objeto. Comúnmente útil para mostrar a usuarios.
+
+reason	
+string or null
+Default: "requested_by_customer"
+Enum: "requested_by_customer" "fraudulent" "duplicate"
+La razón del reembolso. Si no se indica una razón, se utilizará la razón por defecto. Puede ser uno de los siguientes:
+
+Reembolso por solicitud del cliente: requested_by_customer. El reembolso fue solicitado por el cliente.
+Reembolso por fraude: fraudulent. El reembolso fue solicitado por el cliente debido a un fraude.
+Duplicado: duplicate. El reembolso fue solicitado por el cliente debido a un cobro duplicado.
+Respuestas
+201
+Success
+
+400
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+post
+/v1/refunds
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+{
+"amount": 150,
+"paymentIntentId": "cl502zv0d0127ebdp3zt27651",
+"description": "Reembolso de prueba",
+"reason": "requested_by_customer"
+}
+Ejemplos de respuesta
+201400401403
+Content type
+application/json
+
+Copy
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"amount": 150,
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"paymentIntentId": "cl502zv0d0127ebdp3zt27651",
+"description": "Reembolso de prueba",
+"mode": "test",
+"status": "pending",
+"reason": "requested_by_customer",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"failureReason": "declined"
+}
+Obtener un Reembolso
+Retorna el objeto de un Reembolso para un id válido.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+Success
+
+400
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+get
+/v1/refunds/{id}
+
+Ejemplos de solicitud
+JS
+
+Copy
+fetch('https://api.onvopay.com/v1/refunds/cl40muorw00493ndp0okzk2g3', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer <YOUR_API_KEY>'
+  }
+})
+Ejemplos de respuesta
+200400401403
+Content type
+application/json
+
+Copy
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"amount": 150,
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"paymentIntentId": "cl502zv0d0127ebdp3zt27651",
+"description": "Reembolso de prueba",
+"mode": "test",
+"status": "pending",
+"reason": "requested_by_customer",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"failureReason": "declined"
+}
+Productos
+Los Productos describen artículos o servicios específicos que ofrecés a tus clientes. Los Productos se usan en conjunto con Precios para configurar los precios de los productos al usarlos en Links de Pago, Cargos Recurrentes y Sesiones de Checkout.
+
+El objeto Producto
+Atributos
+id	
+string
+Identificador único del objeto.
+
+createdAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue creado el objeto.
+
+description	
+string or null
+Texto arbitrario adjunto al objeto. Comúnmente útil para mostrar a usuarios.
+
+images	
+Array of strings or null
+URLs de imágenes para mostrar con el producto.
+
+isActive	
+boolean
+Atributo booleano que indica si el producto está activo o no. En caso de no estar activo, no se podrán realizar cobros por este producto.
+
+isShippable	
+boolean
+Atributo booleano que indica si el producto puede ser enviado a una dirección física.
+
+name	
+string
+Nombre del producto para mostrar al cliente.
+
+packageDimensions	
+object or null
+Objeto que contiene las medidas del producto. Las medidas se expresan en centímetros (cm) gramos (g) y son los siguientes:
+
+length: Longitud del producto.
+width: Ancho del producto.
+height: Altura del producto.
+weight: Peso del producto.
+mode	
+string
+Enum: "test" "live"
+El modo en el que existen los datos del objeto. Ya sea test o live.
+
+updatedAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue actualizado por última vez el objeto.
+
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"description": "Producto de prueba",
+"images": [
+"https://www.example.com/image.png",
+"https://www.example.com/image2.png"
+],
+"isActive": true,
+"isShippable": false,
+"name": "Producto de prueba",
+"packageDimensions": {
+"length": 10,
+"width": 10,
+"height": 10,
+"weight": 10
+},
+"mode": "test",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Crear un Producto
+Crea un nuevo objeto de Producto.
+
+Authorizations:
+Secret API Key
+Request Body schema: application/json
+description	
+string or null
+Texto arbitrario adjunto al objeto. Comúnmente útil para mostrar a usuarios.
+
+images	
+Array of strings or null
+URLs de imágenes para mostrar con el producto.
+
+isActive	
+boolean
+Atributo booleano que indica si el producto está activo o no. En caso de no estar activo, no se podrán realizar cobros por este producto.
+
+isShippable	
+boolean
+Atributo booleano que indica si el producto puede ser enviado a una dirección física.
+
+name	
+string
+Nombre del producto para mostrar al cliente.
+
+packageDimensions	
+object or null
+Objeto que contiene las medidas del producto. Las medidas se expresan en centímetros (cm) gramos (g) y son los siguientes:
+
+length: Longitud del producto.
+width: Ancho del producto.
+height: Altura del producto.
+weight: Peso del producto.
+Respuestas
+201
+Success
+
+400
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+post
+/v1/products
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"description": "Producto de prueba",
+"images": [
+"https://www.example.com/image.png",
+"https://www.example.com/image2.png"
+],
+"isActive": true,
+"isShippable": false,
+"name": "Producto de prueba",
+"packageDimensions": {
+"length": 10,
+"width": 10,
+"height": 10,
+"weight": 10
+}
+}
+Ejemplos de respuesta
+201400401403
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"description": "Producto de prueba",
+"images": [
+"https://www.example.com/image.png",
+"https://www.example.com/image2.png"
+],
+"isActive": true,
+"isShippable": false,
+"name": "Producto de prueba",
+"packageDimensions": {
+"length": 10,
+"width": 10,
+"height": 10,
+"weight": 10
+},
+"mode": "test",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Listar todos los Productos
+Retorna una lista de tus productos. Los productos retornados están ordenados por la fecha de creación, con los productos creados más recientemente apareciendo primero.
+
+Esta solicitud utiliza paginación para obtener los resultados.
+
+Authorizations:
+Secret API Key
+query Parameters
+createdAt[lt]	
+date <date-time>
+Ejemplo: createdAt[lt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor que el valor especificado.
+
+createdAt[lte]	
+date <date-time>
+Ejemplo: createdAt[lte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor o igual que el valor especificado.
+
+createdAt[gt]	
+date <date-time>
+Ejemplo: createdAt[gt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor que el valor especificado.
+
+createdAt[gte]	
+date <date-time>
+Ejemplo: createdAt[gte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor o igual que el valor especificado.
+
+endingBefore	
+string
+Ejemplo: endingBefore=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+limit	
+number
+Ejemplo: limit=50
+Un límite en la cantidad de objetos a retornar. Puede ser un valor entre 1 y 100, el valor por defecto es 10.
+
+startingAfter	
+string
+Ejemplo: startingAfter=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+Respuestas
+200
+
+get
+/v1/products
+
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+[
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"description": "Producto de prueba",
+"images": [],
+"isActive": true,
+"isShippable": false,
+"name": "Producto de prueba",
+"packageDimensions": {},
+"mode": "test",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+]
+Obtener un Producto
+Retorna el objeto de Producto para un id válido.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+404
+
+get
+/v1/products/{id}
+
+Ejemplos de respuesta
+200404
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"description": "Producto de prueba",
+"images": [
+"https://www.example.com/image.png",
+"https://www.example.com/image2.png"
+],
+"isActive": true,
+"isShippable": false,
+"name": "Producto de prueba",
+"packageDimensions": {
+"length": 10,
+"width": 10,
+"height": 10,
+"weight": 10
+},
+"mode": "test",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Actualizar un Producto
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Request Body schema: application/json
+description	
+string or null
+Texto arbitrario adjunto al objeto. Comúnmente útil para mostrar a usuarios.
+
+images	
+Array of strings or null
+URLs de imágenes para mostrar con el producto.
+
+isActive	
+boolean
+Atributo booleano que indica si el producto está activo o no. En caso de no estar activo, no se podrán realizar cobros por este producto.
+
+isShippable	
+boolean
+Atributo booleano que indica si el producto puede ser enviado a una dirección física.
+
+name	
+string
+Nombre del producto para mostrar al cliente.
+
+packageDimensions	
+object or null
+Objeto que contiene las medidas del producto. Las medidas se expresan en centímetros (cm) gramos (g) y son los siguientes:
+
+length: Longitud del producto.
+width: Ancho del producto.
+height: Altura del producto.
+weight: Peso del producto.
+Respuestas
+201
+
+post
+/v1/products/{id}
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"description": "Producto de prueba",
+"images": [
+"https://www.example.com/image.png",
+"https://www.example.com/image2.png"
+],
+"isActive": true,
+"isShippable": false,
+"name": "Producto de prueba",
+"packageDimensions": {
+"length": 10,
+"width": 10,
+"height": 10,
+"weight": 10
+}
+}
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"description": "Producto de prueba",
+"images": [
+"https://www.example.com/image.png",
+"https://www.example.com/image2.png"
+],
+"isActive": true,
+"isShippable": false,
+"name": "Producto de prueba",
+"packageDimensions": {
+"length": 10,
+"width": 10,
+"height": 10,
+"weight": 10
+},
+"mode": "test",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Borrar un Producto
+Permanentemente elimina el producto. No se puede deshacer. Solo es posible eliminar productos que no tengan Precios asociados.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+
+delete
+/v1/products/{id}
+
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"description": "Producto de prueba",
+"images": [
+"https://www.example.com/image.png",
+"https://www.example.com/image2.png"
+],
+"isActive": true,
+"isShippable": false,
+"name": "Producto de prueba",
+"packageDimensions": {
+"length": 10,
+"width": 10,
+"height": 10,
+"weight": 10
+},
+"mode": "test",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Precios
+Los Precios definen el costo unitario, la moneda y (opcional) el ciclo de facturación para compras recurrentes y productos de compra one-time. Los Productos te ayudan a controlar el inventario o provisionamiento, y los Precios te ayudan a controlar los términos de pago. Diferentes productos físicos o niveles de servicio deben ser representados por productos, y las opciones de precios deben ser representadas por precios. Esta forma debería permitirte cambiar precios sin tener que cambiar tu esquema de provisionamiento.
+
+Por ejemplo, podrías tener un único producto que tenga precios para $10/mes, $100/año, y ₡10,000.00 una vez.
+
+El objeto Precio
+Atributos
+id	
+string
+Identificador único del objeto.
+
+unitAmount	
+integer
+El monto de precio unitario. Debe de ser un número entero positivo representando el monto en la menor denominación posible de la moneda (centavos para el caso de USD y céntimos para CRC). Por ejemplo, si la moneda es USD y el monto a cobrar es $1.50, el valor indicado debe ser 150. De igual forma, si la moneda es CRC y el monto a cobrar es ₡2,100.89, el valor indicado debe ser 210089. El monto mínimo es $0.50 para USD y el correspondiente equivalente en colones para CRC.
+
+currency	
+string
+Enum: "USD" "CRC"
+El tipo de moneda de precio.
+
+createdAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue creado el objeto.
+
+nickname	
+string or null
+Una descripción breve del precio oculta a los clientes. Usada para identificar el precio en el dashboard de ONVO.
+
+isActive	
+boolean
+Atributo booleano que indica si el precio está activo o no. En caso de no estar activo, no se podrán realizar cobros por este precio.
+
+productId	
+string
+Identificador único del producto al que pertenece el precio.
+
+recurring	
+object or null
+Objeto que contiene atributos adicionales cuando el tipo de precio es recurring. En caso de ser un precio recurrente, este objeto será requerido.
+
+mode	
+string
+Enum: "test" "live"
+El modo en el que existen los datos del objeto. Ya sea test o live.
+
+type	
+string
+Enum: "one_time" "recurring"
+El tipo de precio. Puede ser one_time o recurring, dependiendo de si el precio es para una compra one-time o recurrente.
+
+updatedAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue actualizado por última vez el objeto.
+
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"unitAmount": 2099,
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"nickname": "Precio de prueba",
+"isActive": true,
+"productId": "cl502zv0d0127ebdp3zt27651",
+"recurring": {
+"interval": "month",
+"intervalCount": 2
+},
+"mode": "test",
+"type": "recurring",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Crear un Precio
+Crea un nuevo objeto de Precio. El precio puede ser de tipo recurrente o one-time.
+
+Authorizations:
+Secret API Key
+Request Body schema: application/json
+unitAmount	
+integer
+El monto de precio unitario. Debe de ser un número entero positivo representando el monto en la menor denominación posible de la moneda (centavos para el caso de USD y céntimos para CRC). Por ejemplo, si la moneda es USD y el monto a cobrar es $1.50, el valor indicado debe ser 150. De igual forma, si la moneda es CRC y el monto a cobrar es ₡2,100.89, el valor indicado debe ser 210089. El monto mínimo es $0.50 para USD y el correspondiente equivalente en colones para CRC.
+
+currency	
+string
+Enum: "USD" "CRC"
+El tipo de moneda de precio.
+
+nickname	
+string or null
+Una descripción breve del precio oculta a los clientes. Usada para identificar el precio en el dashboard de ONVO.
+
+isActive	
+boolean
+Atributo booleano que indica si el precio está activo o no. En caso de no estar activo, no se podrán realizar cobros por este precio.
+
+productId	
+string
+Identificador único del producto al que pertenece el precio.
+
+recurring	
+object or null
+Objeto que contiene atributos adicionales cuando el tipo de precio es recurring. En caso de ser un precio recurrente, este objeto será requerido.
+
+type	
+string
+Enum: "one_time" "recurring"
+El tipo de precio. Puede ser one_time o recurring, dependiendo de si el precio es para una compra one-time o recurrente.
+
+Respuestas
+201
+Success
+
+400
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+post
+/v1/prices
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"unitAmount": 2099,
+"currency": "USD",
+"nickname": "Precio de prueba",
+"isActive": true,
+"productId": "cl502zv0d0127ebdp3zt27651",
+"recurring": {
+"interval": "month",
+"intervalCount": 2
+},
+"type": "recurring"
+}
+Ejemplos de respuesta
+201400401403
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"unitAmount": 2099,
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"nickname": "Precio de prueba",
+"isActive": true,
+"productId": "cl502zv0d0127ebdp3zt27651",
+"recurring": {
+"interval": "month",
+"intervalCount": 2
+},
+"mode": "test",
+"type": "recurring",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Listar todos los Precios
+Retorna una lista de tus precios. Los precios retornados están ordenados por la fecha de creación, con los precios creados más recientemente apareciendo primero.
+
+Esta solicitud utiliza paginación para obtener los resultados.
+
+Authorizations:
+Secret API Key
+query Parameters
+createdAt[lt]	
+date <date-time>
+Ejemplo: createdAt[lt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor que el valor especificado.
+
+createdAt[lte]	
+date <date-time>
+Ejemplo: createdAt[lte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor o igual que el valor especificado.
+
+createdAt[gt]	
+date <date-time>
+Ejemplo: createdAt[gt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor que el valor especificado.
+
+createdAt[gte]	
+date <date-time>
+Ejemplo: createdAt[gte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor o igual que el valor especificado.
+
+endingBefore	
+string
+Ejemplo: endingBefore=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+limit	
+number
+Ejemplo: limit=50
+Un límite en la cantidad de objetos a retornar. Puede ser un valor entre 1 y 100, el valor por defecto es 10.
+
+startingAfter	
+string
+Ejemplo: startingAfter=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+Respuestas
+200
+
+get
+/v1/prices
+
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+[
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"description": "Producto de prueba",
+"images": [],
+"isActive": true,
+"isShippable": false,
+"name": "Producto de prueba",
+"packageDimensions": {},
+"mode": "test",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+]
+Obtener un Precio
+Retorna el objeto de Precio para un id válido.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+404
+
+get
+/v1/prices/{id}
+
+Ejemplos de respuesta
+200404
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"unitAmount": 2099,
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"nickname": "Precio de prueba",
+"isActive": true,
+"productId": "cl502zv0d0127ebdp3zt27651",
+"recurring": {
+"interval": "month",
+"intervalCount": 2
+},
+"mode": "test",
+"type": "recurring",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Actualizar un Precio
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Request Body schema: application/json
+unitAmount	
+integer
+El monto de precio unitario. Debe de ser un número entero positivo representando el monto en la menor denominación posible de la moneda (centavos para el caso de USD y céntimos para CRC). Por ejemplo, si la moneda es USD y el monto a cobrar es $1.50, el valor indicado debe ser 150. De igual forma, si la moneda es CRC y el monto a cobrar es ₡2,100.89, el valor indicado debe ser 210089. El monto mínimo es $0.50 para USD y el correspondiente equivalente en colones para CRC.
+
+currency	
+string
+Enum: "USD" "CRC"
+El tipo de moneda de precio.
+
+nickname	
+string or null
+Una descripción breve del precio oculta a los clientes. Usada para identificar el precio en el dashboard de ONVO.
+
+isActive	
+boolean
+Atributo booleano que indica si el precio está activo o no. En caso de no estar activo, no se podrán realizar cobros por este precio.
+
+productId	
+string
+Identificador único del producto al que pertenece el precio.
+
+recurring	
+object or null
+Objeto que contiene atributos adicionales cuando el tipo de precio es recurring. En caso de ser un precio recurrente, este objeto será requerido.
+
+type	
+string
+Enum: "one_time" "recurring"
+El tipo de precio. Puede ser one_time o recurring, dependiendo de si el precio es para una compra one-time o recurrente.
+
+Respuestas
+201
+
+post
+/v1/prices/{id}
+
+Ejemplos de solicitud
+PayloadPython
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"unitAmount": 2099,
+"currency": "USD",
+"nickname": "Precio de prueba",
+"isActive": true,
+"productId": "cl502zv0d0127ebdp3zt27651",
+"recurring": {
+"interval": "month",
+"intervalCount": 2
+},
+"type": "recurring"
+}
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"unitAmount": 2099,
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"nickname": "Precio de prueba",
+"isActive": true,
+"productId": "cl502zv0d0127ebdp3zt27651",
+"recurring": {
+"interval": "month",
+"intervalCount": 2
+},
+"mode": "test",
+"type": "recurring",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Borrar un Precio
+Permanentemente elimina el precio. No se puede deshacer. Solo es posible eliminar productos que no tengan Productos asociados.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+
+delete
+/v1/prices/{id}
+
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"unitAmount": 2099,
+"currency": "USD",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"nickname": "Precio de prueba",
+"isActive": true,
+"productId": "cl502zv0d0127ebdp3zt27651",
+"recurring": {
+"interval": "month",
+"intervalCount": 2
+},
+"mode": "test",
+"type": "recurring",
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Cargos recurrentes
+Los cargos recurrentes te permiten crear cargos de carácter automático mediante frecuencias predefinidas en conjunto con el objeto de Precios.
+
+El objeto Cargo Recurrente
+Atributos
+id	
+string
+Identificador único del objeto.
+
+billingCycleAnchor	
+date or null <date-time>
+La fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se desea que se genere el ciclo de facturación, si se desea que el ciclo de facturación no se inicie en la fecha y hora en la que el cliente se suscribe, sino en la fecha y hora indicada en este atributo. Por ejemplo, si se desea que el ciclo de facturación del cargo recurrente sea los 15 de cada mes, al indicar esa fecha en este atributo, ONVO determinará cuánto debe pagar el cliente al momento de la transacción, con base en los días restantes a la fecha indicada y siguiente cobro será el 15 de dicho mes y así ya quedará fijado.
+
+Si no se indica ninguna fecha, el ciclo de facturación se iniciará en el momento en que el cliente se realice el pago de forma satisfactoria.
+
+status	
+string
+Enum: "active" "past_due" "canceled" "unpaid" "incomplete" "incomplete_expired" "trialing"
+El estado actual de la suscripción. Puede ser active, past_due, canceled, unpaid, incomplete, incomplete_expired, trialing.
+
+cancelAt	
+date or null
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se desea que se cancele el cargo recurrente. Esta fecha debera ser mayor a la fecha actual y podria generar diferentes escenarios que se detallan a continuación.
+
+Si se usa una fecha menor al inicio del siguiente ciclo de facturación, se cancelara el cargo recurrente inmediatamente, sin generar un nuevo monto a cobrar.
+Si se usa una fecha menor a la finalización del siguiente período, al ejecutar el ciclo de facturación, se cancelara el cargo recurrente, pero además un nuevo monto sera calculado, utilizando el costo diario calculado y la cantidad de días diferencia generados por la fecha de cancelación.
+Si se usa una fecha mayor a la finalización del siguiente período, se ejecutara el ciclo de facturación actual, pero además un nuevo monto sera calcualdo para el siguiente ciclo de facturación, esto basado en el costo diario calculado y la cantidad de días diferencia generados por la fecha de cancelación.
+cancelAtPeriodEnd	
+boolean or null
+Indica si el cargo recurrente se cancela al finalizar el período de facturación. El valor por defecto es false.
+
+canceledAt	
+date or null
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se canceló el cargo recurrente.
+
+createdAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue creado el objeto.
+
+currentPeriodStart	
+date or null
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que inició el periodo de facturación actual.
+
+currentPeriodEnd	
+date or null
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que finaliza el periodo de facturación actual.
+
+customerId	
+string
+Identificador único del cliente asociado al cargo recurrente
+
+description	
+string or null
+Una descripción arbitraria del cargo recurrente.
+
+paymentBehavior	
+string or null
+Enum: "allow_incomplete" "default_incomplete"
+El comportamiento del cargo recurrente. Puede ser allow_incomplete o default_incomplete, siendo el último el valor por defecto, si no se envía. Si se envía allow_incomplete, el cargo recurrente se creará en forma inmediata, pero no se cobrará hasta que el cargo recurrente se confirme. Si no se envía, el cargo recurrente se creará en forma inmediata y se cobrará inmediatamente al método de pago indicado.
+
+startDate	
+date or null
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se desea que se inicie el cargo recurrente. Si no se envía, el cargo recurrente se iniciará en el momento en que el cliente realice el pago de forma satisfactoria. Este atributo no es compatible si paymentBehavior es allow_incomplete.
+
+paymentMethodId	
+string or null
+Identificador único del método de pago asociado al cargo recurrente. Si paymentBehavior es diferente a allow_incomplete, este atributo es obligatorio.
+
+mode	
+string
+Enum: "test" "live"
+El modo en el que existen los datos del objeto. Ya sea test o live.
+
+items	
+Array of objects (SubscriptionItem)
+Lista de items asociados al cargo recurrente. Cada item representa un precio de tipo recurring.
+
+trialPeriodDays	
+integer or null
+El número de días de prueba que se desean brindar al cliente.
+
+trialStart	
+date or null
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se inicia el periodo de prueba, si el atributo de trialPeriodDays fue indicado.
+
+trialEnd	
+date or null
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se finaliza el periodo de prueba, si el atributo de trialPeriodDays fue indicado.
+
+updatedAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue actualizado por última vez el objeto.
+
+latestInvoice	
+object (Invoice)
+Objeto que contiene la información de la última factura generada para el cargo recurrente.
+
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billingCycleAnchor": "2022-09-31T00:00:00.000Z",
+"status": "trialing",
+"cancelAt": "2022-06-12T21:21:10.587Z",
+"cancelAtPeriodEnd": true,
+"canceledAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"currentPeriodStart": "2022-06-12T21:21:10.587Z",
+"currentPeriodEnd": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Cargo recurrente de prueba",
+"paymentBehavior": "default_incomplete",
+"startDate": "2024-01-10T21:21:10.587Z",
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"items": [
+{}
+],
+"trialPeriodDays": 7,
+"trialStart": "2022-06-12T21:21:10.587Z",
+"trialEnd": "2022-06-12T21:21:10.587Z",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"latestInvoice": {
+"id": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"currency": "USD",
+"attemptCount": 1,
+"attempted": true,
+"description": "Factura de prueba",
+"total": 2099,
+"subtotal": 2099,
+"originalTotal": 1099,
+"status": "paid",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"lastPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"nextPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"invoiceAdditionalItems": []
+}
+}
+Crear un Cargo recurrente
+Crea un nuevo objeto de Cargo recurrente.
+
+Authorizations:
+Secret API Key
+Request Body schema: application/json
+billingCycleAnchor	
+date or null <date-time>
+La fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se desea que se genere el ciclo de facturación, si se desea que el ciclo de facturación no se inicie en la fecha y hora en la que el cliente se suscribe, sino en la fecha y hora indicada en este atributo. Por ejemplo, si se desea que el ciclo de facturación del cargo recurrente sea los 15 de cada mes, al indicar esa fecha en este atributo, ONVO determinará cuánto debe pagar el cliente al momento de la transacción, con base en los días restantes a la fecha indicada y siguiente cobro será el 15 de dicho mes y así ya quedará fijado.
+
+Si no se indica ninguna fecha, el ciclo de facturación se iniciará en el momento en que el cliente se realice el pago de forma satisfactoria.
+
+cancelAt	
+date or null
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se desea que se cancele el cargo recurrente. Esta fecha debera ser mayor a la fecha actual y podria generar diferentes escenarios que se detallan a continuación.
+
+Si se usa una fecha menor al inicio del siguiente ciclo de facturación, se cancelara el cargo recurrente inmediatamente, sin generar un nuevo monto a cobrar.
+Si se usa una fecha menor a la finalización del siguiente período, al ejecutar el ciclo de facturación, se cancelara el cargo recurrente, pero además un nuevo monto sera calculado, utilizando el costo diario calculado y la cantidad de días diferencia generados por la fecha de cancelación.
+Si se usa una fecha mayor a la finalización del siguiente período, se ejecutara el ciclo de facturación actual, pero además un nuevo monto sera calcualdo para el siguiente ciclo de facturación, esto basado en el costo diario calculado y la cantidad de días diferencia generados por la fecha de cancelación.
+cancelAtPeriodEnd	
+boolean or null
+Indica si el cargo recurrente se cancela al finalizar el período de facturación. El valor por defecto es false.
+
+customerId	
+string
+Identificador único del cliente asociado al cargo recurrente
+
+description	
+string or null
+Una descripción arbitraria del cargo recurrente.
+
+paymentBehavior	
+string or null
+Enum: "allow_incomplete" "default_incomplete"
+El comportamiento del cargo recurrente. Puede ser allow_incomplete o default_incomplete, siendo el último el valor por defecto, si no se envía. Si se envía allow_incomplete, el cargo recurrente se creará en forma inmediata, pero no se cobrará hasta que el cargo recurrente se confirme. Si no se envía, el cargo recurrente se creará en forma inmediata y se cobrará inmediatamente al método de pago indicado.
+
+startDate	
+date or null
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se desea que se inicie el cargo recurrente. Si no se envía, el cargo recurrente se iniciará en el momento en que el cliente realice el pago de forma satisfactoria. Este atributo no es compatible si paymentBehavior es allow_incomplete.
+
+paymentMethodId	
+string or null
+Identificador único del método de pago asociado al cargo recurrente. Si paymentBehavior es diferente a allow_incomplete, este atributo es obligatorio.
+
+items	
+Array of objects (SubscriptionItem)
+Lista de items asociados al cargo recurrente. Cada item representa un precio de tipo recurring.
+
+trialPeriodDays	
+integer or null
+El número de días de prueba que se desean brindar al cliente.
+
+Respuestas
+201
+Success
+
+400
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+post
+/v1/subscriptions
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"billingCycleAnchor": "2022-09-31T00:00:00.000Z",
+"cancelAt": "2022-06-12T21:21:10.587Z",
+"cancelAtPeriodEnd": true,
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Cargo recurrente de prueba",
+"paymentBehavior": "default_incomplete",
+"startDate": "2024-01-10T21:21:10.587Z",
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+"items": [
+{}
+],
+"trialPeriodDays": 7
+}
+Ejemplos de respuesta
+201400401403
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billingCycleAnchor": "2022-09-31T00:00:00.000Z",
+"status": "trialing",
+"cancelAt": "2022-06-12T21:21:10.587Z",
+"cancelAtPeriodEnd": true,
+"canceledAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"currentPeriodStart": "2022-06-12T21:21:10.587Z",
+"currentPeriodEnd": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Cargo recurrente de prueba",
+"paymentBehavior": "default_incomplete",
+"startDate": "2024-01-10T21:21:10.587Z",
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"items": [
+{}
+],
+"trialPeriodDays": 7,
+"trialStart": "2022-06-12T21:21:10.587Z",
+"trialEnd": "2022-06-12T21:21:10.587Z",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"latestInvoice": {
+"id": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"currency": "USD",
+"attemptCount": 1,
+"attempted": true,
+"description": "Factura de prueba",
+"total": 2099,
+"subtotal": 2099,
+"originalTotal": 1099,
+"status": "paid",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"lastPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"nextPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"invoiceAdditionalItems": []
+}
+}
+Listar todos los Cargos recurrentes
+Retorna una lista de tus cargos recurrentes. Los cargos recurrentes retornados estáran ordenados por la fecha de creación, con los creados más recientemente apareciendo primero.
+
+Esta solicitud utiliza paginación para obtener los resultados.
+
+Authorizations:
+Secret API Key
+query Parameters
+createdAt[lt]	
+date <date-time>
+Ejemplo: createdAt[lt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor que el valor especificado.
+
+createdAt[lte]	
+date <date-time>
+Ejemplo: createdAt[lte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor o igual que el valor especificado.
+
+createdAt[gt]	
+date <date-time>
+Ejemplo: createdAt[gt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor que el valor especificado.
+
+createdAt[gte]	
+date <date-time>
+Ejemplo: createdAt[gte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor o igual que el valor especificado.
+
+endingBefore	
+string
+Ejemplo: endingBefore=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+limit	
+number
+Ejemplo: limit=50
+Un límite en la cantidad de objetos a retornar. Puede ser un valor entre 1 y 100, el valor por defecto es 10.
+
+startingAfter	
+string
+Ejemplo: startingAfter=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+status	
+string
+Ejemplo: status=active
+Corresponde a alguno de los posibles estados de un cargo recurrente(active, past_due, canceled, trialing, incomplete).
+
+email	
+string
+Ejemplo: email=test@onvopay.com
+Corresponde al correo electronico de un Cliente asociado a un cargo recurrente.
+
+Respuestas
+200
+
+get
+/v1/subscriptions
+
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+[
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billingCycleAnchor": "2022-09-31T00:00:00.000Z",
+"status": "trialing",
+"cancelAt": "2022-06-12T21:21:10.587Z",
+"cancelAtPeriodEnd": true,
+"canceledAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"currentPeriodStart": "2022-06-12T21:21:10.587Z",
+"currentPeriodEnd": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Cargo recurrente de prueba",
+"paymentBehavior": "default_incomplete",
+"startDate": "2024-01-10T21:21:10.587Z",
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"items": [],
+"trialPeriodDays": 7,
+"trialStart": "2022-06-12T21:21:10.587Z",
+"trialEnd": "2022-06-12T21:21:10.587Z",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"latestInvoice": {}
+}
+]
+Obtener un Cargo Recurrente
+Retorna el objeto de Cargo recurrente para un id válido.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+404
+
+get
+/v1/subscriptions/{id}
+
+Ejemplos de respuesta
+200404
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billingCycleAnchor": "2022-09-31T00:00:00.000Z",
+"status": "trialing",
+"cancelAt": "2022-06-12T21:21:10.587Z",
+"cancelAtPeriodEnd": true,
+"canceledAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"currentPeriodStart": "2022-06-12T21:21:10.587Z",
+"currentPeriodEnd": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Cargo recurrente de prueba",
+"paymentBehavior": "default_incomplete",
+"startDate": "2024-01-10T21:21:10.587Z",
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"items": [
+{}
+],
+"trialPeriodDays": 7,
+"trialStart": "2022-06-12T21:21:10.587Z",
+"trialEnd": "2022-06-12T21:21:10.587Z",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"latestInvoice": {
+"id": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"currency": "USD",
+"attemptCount": 1,
+"attempted": true,
+"description": "Factura de prueba",
+"total": 2099,
+"subtotal": 2099,
+"originalTotal": 1099,
+"status": "paid",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"lastPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"nextPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"invoiceAdditionalItems": []
+}
+}
+Actualizar un Cargo recurrente
+Actualiza un Cargo Recurrente. Los cargos recurrentes solo pueden ser actualizados si estos no han sido cancelados(status=canceled).
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Request Body schema: application/json
+billingCycleAnchor	
+date or null <date-time>
+La fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se desea que se genere el ciclo de facturación, si se desea que el ciclo de facturación no se inicie en la fecha y hora en la que el cliente se suscribe, sino en la fecha y hora indicada en este atributo. Por ejemplo, si se desea que el ciclo de facturación del cargo recurrente sea los 15 de cada mes, al indicar esa fecha en este atributo, ONVO determinará cuánto debe pagar el cliente al momento de la transacción, con base en los días restantes a la fecha indicada y siguiente cobro será el 15 de dicho mes y así ya quedará fijado.
+
+Si no se indica ninguna fecha, el ciclo de facturación se iniciará en el momento en que el cliente se realice el pago de forma satisfactoria.
+
+cancelAt	
+date or null
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se desea que se cancele el cargo recurrente. Esta fecha debera ser mayor a la fecha actual y podria generar diferentes escenarios que se detallan a continuación.
+
+Si se usa una fecha menor al inicio del siguiente ciclo de facturación, se cancelara el cargo recurrente inmediatamente, sin generar un nuevo monto a cobrar.
+Si se usa una fecha menor a la finalización del siguiente período, al ejecutar el ciclo de facturación, se cancelara el cargo recurrente, pero además un nuevo monto sera calculado, utilizando el costo diario calculado y la cantidad de días diferencia generados por la fecha de cancelación.
+Si se usa una fecha mayor a la finalización del siguiente período, se ejecutara el ciclo de facturación actual, pero además un nuevo monto sera calcualdo para el siguiente ciclo de facturación, esto basado en el costo diario calculado y la cantidad de días diferencia generados por la fecha de cancelación.
+cancelAtPeriodEnd	
+boolean or null
+Indica si el cargo recurrente se cancela al finalizar el período de facturación. El valor por defecto es false.
+
+customerId	
+string
+Identificador único del cliente asociado al cargo recurrente
+
+description	
+string or null
+Una descripción arbitraria del cargo recurrente.
+
+paymentBehavior	
+string or null
+Enum: "allow_incomplete" "default_incomplete"
+El comportamiento del cargo recurrente. Puede ser allow_incomplete o default_incomplete, siendo el último el valor por defecto, si no se envía. Si se envía allow_incomplete, el cargo recurrente se creará en forma inmediata, pero no se cobrará hasta que el cargo recurrente se confirme. Si no se envía, el cargo recurrente se creará en forma inmediata y se cobrará inmediatamente al método de pago indicado.
+
+startDate	
+date or null
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que se desea que se inicie el cargo recurrente. Si no se envía, el cargo recurrente se iniciará en el momento en que el cliente realice el pago de forma satisfactoria. Este atributo no es compatible si paymentBehavior es allow_incomplete.
+
+paymentMethodId	
+string or null
+Identificador único del método de pago asociado al cargo recurrente. Si paymentBehavior es diferente a allow_incomplete, este atributo es obligatorio.
+
+items	
+Array of objects (SubscriptionItem)
+Lista de items asociados al cargo recurrente. Cada item representa un precio de tipo recurring.
+
+trialPeriodDays	
+integer or null
+El número de días de prueba que se desean brindar al cliente.
+
+Respuestas
+201
+
+post
+/v1/subscriptions/{id}
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"billingCycleAnchor": "2022-09-31T00:00:00.000Z",
+"cancelAt": "2022-06-12T21:21:10.587Z",
+"cancelAtPeriodEnd": true,
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Cargo recurrente de prueba",
+"paymentBehavior": "default_incomplete",
+"startDate": "2024-01-10T21:21:10.587Z",
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+"items": [
+{}
+],
+"trialPeriodDays": 7
+}
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billingCycleAnchor": "2022-09-31T00:00:00.000Z",
+"status": "trialing",
+"cancelAt": "2022-06-12T21:21:10.587Z",
+"cancelAtPeriodEnd": true,
+"canceledAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"currentPeriodStart": "2022-06-12T21:21:10.587Z",
+"currentPeriodEnd": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Cargo recurrente de prueba",
+"paymentBehavior": "default_incomplete",
+"startDate": "2024-01-10T21:21:10.587Z",
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"items": [
+{}
+],
+"trialPeriodDays": 7,
+"trialStart": "2022-06-12T21:21:10.587Z",
+"trialEnd": "2022-06-12T21:21:10.587Z",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"latestInvoice": {
+"id": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"currency": "USD",
+"attemptCount": 1,
+"attempted": true,
+"description": "Factura de prueba",
+"total": 2099,
+"subtotal": 2099,
+"originalTotal": 1099,
+"status": "paid",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"lastPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"nextPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"invoiceAdditionalItems": []
+}
+}
+Cancelar un Cargo recurrente
+Permanentemente cancela el cargo recurrente. Al utilizar este request el cargo recurrente quedara con status Cancelado(canceled) y cualquier invoice asociado sera actualizado con el status Anulado(void).
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+
+delete
+/v1/subscriptions/{id}
+
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billingCycleAnchor": "2022-09-31T00:00:00.000Z",
+"status": "trialing",
+"cancelAt": "2022-06-12T21:21:10.587Z",
+"cancelAtPeriodEnd": true,
+"canceledAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"currentPeriodStart": "2022-06-12T21:21:10.587Z",
+"currentPeriodEnd": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Cargo recurrente de prueba",
+"paymentBehavior": "default_incomplete",
+"startDate": "2024-01-10T21:21:10.587Z",
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"items": [
+{}
+],
+"trialPeriodDays": 7,
+"trialStart": "2022-06-12T21:21:10.587Z",
+"trialEnd": "2022-06-12T21:21:10.587Z",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"latestInvoice": {
+"id": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"currency": "USD",
+"attemptCount": 1,
+"attempted": true,
+"description": "Factura de prueba",
+"total": 2099,
+"subtotal": 2099,
+"originalTotal": 1099,
+"status": "paid",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"lastPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"nextPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"invoiceAdditionalItems": []
+}
+}
+Confirmar un Cargo recurrente
+Confirma un Cargo recurrente creado con paymentBehavior igual a allow_incomplete.
+
+Authorizations:
+Secret API KeyPublishable API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Request Body schema: application/json
+paymentMethodId	
+string or null
+Identificador único del método de pago asociado al cargo recurrente. Si paymentBehavior es diferente a allow_incomplete, este atributo es obligatorio.
+
+Respuestas
+201
+
+post
+/v1/subscriptions/{id}/confirm
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+{
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651"
+}
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"billingCycleAnchor": "2022-09-31T00:00:00.000Z",
+"status": "trialing",
+"cancelAt": "2022-06-12T21:21:10.587Z",
+"cancelAtPeriodEnd": true,
+"canceledAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"currentPeriodStart": "2022-06-12T21:21:10.587Z",
+"currentPeriodEnd": "2022-06-12T21:21:10.587Z",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"description": "Cargo recurrente de prueba",
+"paymentBehavior": "default_incomplete",
+"startDate": "2024-01-10T21:21:10.587Z",
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"items": [
+{}
+],
+"trialPeriodDays": 7,
+"trialStart": "2022-06-12T21:21:10.587Z",
+"trialEnd": "2022-06-12T21:21:10.587Z",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"latestInvoice": {
+"id": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"currency": "USD",
+"attemptCount": 1,
+"attempted": true,
+"description": "Factura de prueba",
+"total": 2099,
+"subtotal": 2099,
+"originalTotal": 1099,
+"status": "paid",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"lastPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"nextPaymentAttempt": "2022-06-12T21:21:10.587Z",
+"invoiceAdditionalItems": []
+}
+}
+Agregar item a un Cargo recurrente
+Agrega un artículo con un precio específico, que se tendrá en cuenta a la hora de cobrar la factura del periodo actual. Dado que el item adicional está estrictamente relacionado con un cargo recurrente y el periodo actual, no afectará las nuevas facturas que se generen en recurrencias posteriores.
+
+Authorizations:
+Secret API KeyPublishable API Key
+path Parameters
+id
+required
+string
+Identificador único del cargo recurrente.
+
+Request Body schema: application/json
+description	
+string
+Texto para identificar al item adicional. Comúnmente útil para mostrar a usuarios.
+
+amount	
+number
+El monto del item adicional en centavos.
+
+quantity	
+number
+La cantidad del item adicional.
+
+currency	
+string
+Enum: "USD" "CRC"
+El tipo de moneda de precio.
+
+Respuestas
+201
+
+post
+/v1/subscriptions/{id}/items
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+{
+"description": "Producto de prueba",
+"amount": 2099,
+"quantity": 1,
+"currency": "USD"
+}
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"description": "Item adicional de prueba",
+"amount": 2099,
+"currency": "USD",
+"quantity": 2,
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z"
+}
+Actualizar item de un Cargo recurrente
+Actualiza un ítem específico de un cargo recurrente, utilizando como parámetros el id del Cargo Recurrente y el id del ítem deseado.
+
+Authorizations:
+Secret API KeyPublishable API Key
+path Parameters
+id
+required
+string
+Identificador único del cargo recurrente.
+
+item
+required
+string
+Identificador único del item.
+
+Request Body schema: application/json
+description	
+string
+Texto para identificar al item adicional. Comúnmente útil para mostrar a usuarios.
+
+amount	
+number
+El monto del item adicional en centavos.
+
+quantity	
+number
+La cantidad del item adicional.
+
+currency	
+string
+Enum: "USD" "CRC"
+El tipo de moneda de precio.
+
+Respuestas
+201
+
+patch
+/v1/subscriptions/{id}/items/{item}
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+{
+"description": "Item adicional de prueba",
+"amount": 2099,
+"quantity": 1,
+"currency": "USD"
+}
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"mode": "test",
+"description": "Item adicional de prueba",
+"amount": 2099,
+"currency": "USD",
+"quantity": 2,
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z"
+}
+Borrar item de un Cargo recurrente
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del cargo recurrente.
+
+itemId
+required
+string
+Identificador único del item.
+
+
+delete
+/v1/subscriptions/{id}/items/{itemId}
+
+Tarifas de envío
+Los objetos de tarifa de envío describen el costo y el periodo a mostrar al asociarlo a un link de pago o una sesión de checkout.
+
+El objeto Tarifa de Envío
+Atributos
+id	
+string
+Identificador único del objeto.
+
+createdAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue creado el objeto.
+
+amount	
+number >= 0
+El monto, en centavos, del precio de la tarifa de envío. Por ejemplo, si el precio de la tarifa de envío es de $10.00, el atributo deberá ser 1000. Si se envía amount como 0, el precio de la tarifa de envío será mostrada como gratis.
+
+currency	
+string
+Enum: "USD" "CRC"
+La moneda en la que se define el monto del envío.
+
+displayName	
+string
+El nombre que se mostrará en la tarifa de envío.
+
+isActive	
+boolean or null
+Default: true
+Indica si el envío está activo. Si es false, el envío no se podrá utilizar para generar una compra.
+
+deliveryEstimate	
+object or null
+El período de tiempo estimado para la entrega del envío.
+
+updatedAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue actualizado por última vez el objeto.
+
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"amount": 1000,
+"currency": "USD",
+"displayName": "Envío a domicilio al siguiente día.",
+"isActive": true,
+"deliveryEstimate": {
+"minimumUnit": "days",
+"minimumValue": 2,
+"maximumUnit": "days",
+"maximumValue": 2
+},
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Crear una tarifa de envío
+Crea un nuevo objeto de Tarifa de envío.
+
+Authorizations:
+Secret API Key
+Request Body schema: application/json
+amount	
+number >= 0
+El monto, en centavos, del precio de la tarifa de envío. Por ejemplo, si el precio de la tarifa de envío es de $10.00, el atributo deberá ser 1000. Si se envía amount como 0, el precio de la tarifa de envío será mostrada como gratis.
+
+currency	
+string
+Enum: "USD" "CRC"
+La moneda en la que se define el monto del envío.
+
+displayName	
+string
+El nombre que se mostrará en la tarifa de envío.
+
+isActive	
+boolean or null
+Default: true
+Indica si el envío está activo. Si es false, el envío no se podrá utilizar para generar una compra.
+
+deliveryEstimate	
+object or null
+El período de tiempo estimado para la entrega del envío.
+
+Respuestas
+201
+Success
+
+400
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+post
+/v1/shipping-rates
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"amount": 1000,
+"currency": "USD",
+"displayName": "Envío a domicilio al siguiente día.",
+"isActive": true,
+"deliveryEstimate": {
+"minimumUnit": "days",
+"minimumValue": 2,
+"maximumUnit": "days",
+"maximumValue": 2
+}
+}
+Ejemplos de respuesta
+201400401403
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"amount": 1000,
+"currency": "USD",
+"displayName": "Envío a domicilio al siguiente día.",
+"isActive": true,
+"deliveryEstimate": {
+"minimumUnit": "days",
+"minimumValue": 2,
+"maximumUnit": "days",
+"maximumValue": 2
+},
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Listar todas las tarifas de envío
+Retorna una lista de tus Tarifas de envío.
+
+Esta solicitud utiliza paginación para obtener los resultados.
+
+Authorizations:
+Secret API Key
+query Parameters
+createdAt[lt]	
+date <date-time>
+Ejemplo: createdAt[lt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor que el valor especificado.
+
+createdAt[lte]	
+date <date-time>
+Ejemplo: createdAt[lte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es menor o igual que el valor especificado.
+
+createdAt[gt]	
+date <date-time>
+Ejemplo: createdAt[gt]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor que el valor especificado.
+
+createdAt[gte]	
+date <date-time>
+Ejemplo: createdAt[gte]=2022-06-12T21:21:10.587Z
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, que filtra los resultados donde createdAt es mayor o igual que el valor especificado.
+
+endingBefore	
+string
+Ejemplo: endingBefore=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+limit	
+number
+Ejemplo: limit=50
+Un límite en la cantidad de objetos a retornar. Puede ser un valor entre 1 y 100, el valor por defecto es 10.
+
+startingAfter	
+string
+Ejemplo: startingAfter=cl40muorw00493ndp0okzk2g3
+Un cursor usado para paginación. Corresponde al ID de un objeto existente.
+
+Respuestas
+200
+
+get
+/v1/shipping-rates
+
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+[
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"amount": 1000,
+"currency": "USD",
+"displayName": "Envío a domicilio al siguiente día.",
+"isActive": true,
+"deliveryEstimate": {},
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+]
+Obtener una tarifa de envío
+Retorna el objeto de Tarifa de envío para un id válido.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+404
+
+get
+/v1/shipping-rates/{id}
+
+Ejemplos de respuesta
+200404
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"amount": 1000,
+"currency": "USD",
+"displayName": "Envío a domicilio al siguiente día.",
+"isActive": true,
+"deliveryEstimate": {
+"minimumUnit": "days",
+"minimumValue": 2,
+"maximumUnit": "days",
+"maximumValue": 2
+},
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Actualizar una tarifa de envío
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+201
+
+post
+/v1/shipping-rates/{id}
+
+Ejemplos de respuesta
+201
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"amount": 1000,
+"currency": "USD",
+"displayName": "Envío a domicilio al siguiente día.",
+"isActive": true,
+"deliveryEstimate": {
+"minimumUnit": "days",
+"minimumValue": 2,
+"maximumUnit": "days",
+"maximumValue": 2
+},
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Borrar una tarifa de envío
+Permanentemente elimina la Tarifa de envío. No se puede deshacer.
+
+Authorizations:
+Secret API Key
+path Parameters
+id
+required
+string
+Identificador único del objeto.
+
+Respuestas
+200
+
+delete
+/v1/shipping-rates/{id}
+
+Ejemplos de respuesta
+200
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"amount": 1000,
+"currency": "USD",
+"displayName": "Envío a domicilio al siguiente día.",
+"isActive": true,
+"deliveryEstimate": {
+"minimumUnit": "days",
+"minimumValue": 2,
+"maximumUnit": "days",
+"maximumValue": 2
+},
+"updatedAt": "2022-06-12T21:21:10.587Z"
+}
+Sesiones de Checkout
+La Sesión de Checkout representa la sesión de un cliente al realizar pagos individuales o recurrentes mediante el Checkout de ONVO.
+
+Una vez que el pago es satisfactorio, la sesión de Checkout contendrá la referencia del cliente así como de intención de pago o de la suscripción, según sea el caso.
+
+Podés crear la Sesión de Checkout en tu server y compartir la URL con el cliente para que realice el pago.
+
+Atributos
+id	
+string
+Identificador único del objeto.
+
+accountId	
+string
+Identificador único del negocio.
+
+url	
+string
+La URL de la sesión de checkout.
+
+updatedAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue actualizado por última vez el objeto.
+
+createdAt	
+date
+Fecha y hora, en formato ISO 8901 y con zona horaria en UTC, en la que fue creado el objeto.
+
+billingAddressCollection	
+boolean
+Bandera que indica si existe una lista de direcciones de facturación del método de pago.
+
+allowPromotionCodes	
+boolean
+Bandera que indica si están habilitados los códigos promocionales.
+
+successUrl	
+string
+La URL a la que se redirigirá al cliente en caso de que el pago sea exitoso.
+
+cancelUrl	
+string
+La URL a la que se redirigirá al cliente en caso de que el pago sea cancelado.
+
+status	
+string
+Enum: "open" "expired"
+El estado de la sesión de Checkout. Puede ser open o expired.
+
+lineItems	
+Array of objects
+mode	
+string
+Enum: "test" "live"
+El modo en el que existen los datos del objeto. Ya sea test o live.
+
+shippingAddressCollection	
+boolean
+Bandera que indica si existe una lista de direcciones de facturación del método de pago.
+
+shippingCountries	
+Array of arrays
+Objeto que contiene la lista de paises de envío.
+
+shippingRates	
+Array of arrays
+Objeto que contiene la lista de tarifase de envío.
+
+paymentStatus	
+string
+Enum: "paid" "unpaid"
+El estado actual de la Sesión de Checkout. Al momento de crearse, inicia con status unpaid y, una vez que el pago sea satisfactorio, pasa a status paid.
+
+paymentIntentId	
+string
+Identificador único del intento de pago.
+
+account	
+object
+Objeto que contiene los detalles del negocio para el cual el One Time Link es creado.
+
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"accountId": "cl2bf0cex38477agdpxiocx3vb",
+"url": "https://checkout.onvopay.com/pay/cl502zv0d0127ebdp3zt27651",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"billingAddressCollection": true,
+"allowPromotionCodes": false,
+"successUrl": "https://example.com/success",
+"cancelUrl": "https://example.com/cancel",
+"status": "open",
+"lineItems": [
+{}
+],
+"mode": "test",
+"shippingAddressCollection": true,
+"shippingCountries": [ ],
+"shippingRates": [ ],
+"paymentStatus": "unpaid",
+"paymentIntentId": "clcl69c7m0011jhtrfs04kwfw",
+"account": { }
+}
+Crear una Sesión de Checkout
+Crea un objeto de One Time Link.
+
+Con información de productos nuevos o la referencia a productos existentes, podes crear un link de pago de un único uso y que podés compartir la URL con el cliente para que realice el pago.
+
+Authorizations:
+Secret API Key
+Request Body schema: application/json
+customerName	
+string or null
+Nombre completo del cliente para el primer paso de contacto.
+
+customerEmail	
+string or null <email>
+Correo electrónico del cliente para el primer paso de contacto.
+
+customerPhone	
+string or null
+El número de teléfono del cliente, incluyendo código de área (Ej: +50688880000)
+
+redirectUrl	
+string or null
+La URL a la que se redirigirá al cliente en caso de que el pago sea exitoso.
+
+cancelUrl	
+string or null
+La URL a la que se redirigirá al cliente en caso de que el pago sea cancelado.
+
+lineItems	
+Array of objects
+metadata	
+object or null
+Objeto opcional que puede ser utilizado para guardar información adicional sobre la sesión de Checkout. Puede ser útil para guardar información como el ID de una orden de compra, el ID de un carrito de compras, etc. Podés especificar hasta 50 pares de llave-valor. Las llaves y valores deben ser de tipo string. El nombre de las llaves debe de tener una longitud máxima de 40 caracteres y los valores una longitud máxima de 500 caracteres.
+
+Respuestas
+201
+Success
+
+400
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+post
+/v1/checkout/sessions/one-time-link
+
+Ejemplos de solicitud
+Payload
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"customerName": "John Doe",
+"customerEmail": "test@onvopay.com",
+"customerPhone": "+50688880000",
+"redirectUrl": "https://example.com/success",
+"cancelUrl": "https://example.com/cancel",
+"lineItems": [
+{}
+],
+"metadata": {
+"orderId": "123456789",
+"cartId": "987654321"
+}
+}
+Ejemplos de respuesta
+201400401403
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"accountId": "cl2bf0cex38477agdpxiocx3vb",
+"url": "https://checkout.onvopay.com/pay/cl502zv0d0127ebdp3zt27651",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"billingAddressCollection": true,
+"allowPromotionCodes": false,
+"successUrl": "https://example.com/success",
+"cancelUrl": "https://example.com/cancel",
+"status": "open",
+"lineItems": [
+{}
+],
+"mode": "test",
+"shippingAddressCollection": true,
+"shippingCountries": [ ],
+"shippingRates": [ ],
+"paymentStatus": "unpaid",
+"paymentIntentId": "clcl69c7m0011jhtrfs04kwfw",
+"account": { }
+}
+Expirar una Sesión de Checkout
+En caso de que se desee desactivar una Sesión de Checkout, se puede hacer una solicitud para expirar la misma. Si la Sesión de Checkout ya está expirada, no se puede volver a expirar y se devolverá un error 400 Bad Request.
+
+Si se intenta acceder a una Sesión de Checkout expirada, el cliente será redireccionado. Si la Sesión cuenta con un parámetro en cancelUrl, será redireccionado a esa URL. En caso contrario, será redireccionado a la URL de onvopay.com
+
+Authorizations:
+Secret API Key
+Respuestas
+201
+Success
+
+400
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+post
+/v1/checkout/sessions/{id}/expire
+
+Ejemplos de respuesta
+201400401403
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"accountId": "cl2bf0cex38477agdpxiocx3vb",
+"url": "https://checkout.onvopay.com/pay/cl502zv0d0127ebdp3zt27651",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"billingAddressCollection": true,
+"allowPromotionCodes": false,
+"successUrl": "https://example.com/success",
+"cancelUrl": "https://example.com/cancel",
+"status": "open",
+"lineItems": [
+{}
+],
+"mode": "test",
+"shippingAddressCollection": true,
+"shippingCountries": [ ],
+"shippingRates": [ ],
+"paymentStatus": "unpaid",
+"paymentIntentId": "clcl69c7m0011jhtrfs04kwfw",
+"account": { }
+}
+Listar Sesiones de Checkout
+Retorna una lista One Time Links. Los One Time Links retornados están ordenados por la fecha de creación, con los precios creados más recientemente apareciendo primero.
+
+Esta solicitud utiliza paginación para obtener los resultados.
+
+Authorizations:
+Secret API Key
+Respuestas
+200
+OK
+
+400
+Bad Request
+
+401
+Unauthorized
+
+403
+Forbidden
+
+
+get
+/v1/checkout/sessions/one-time-link/account
+
+Ejemplos de solicitud
+JS
+
+Copy
+fetch('https://api.onvopay.com/v1/checkout/sessions/one-time-link/account', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer <YOUR_API_KEY>'
+  }
+})
+Ejemplos de respuesta
+200400401403
+Content type
+application/json
+
+Copy
+Expand allCollapse all
+[
+{
+"id": "cl502zv0d0127ebdp3zt27651",
+"accountId": "cl2bf0cex38477agdpxiocx3vb",
+"url": "https://checkout.onvopay.com/pay/cl502zv0d0127ebdp3zt27651",
+"updatedAt": "2022-06-12T21:21:10.587Z",
+"createdAt": "2022-06-12T21:21:10.587Z",
+"billingAddressCollection": true,
+"allowPromotionCodes": false,
+"successUrl": "https://example.com/success",
+"cancelUrl": "https://example.com/cancel",
+"status": "open",
+"lineItems": [],
+"mode": "test",
+"shippingAddressCollection": true,
+"shippingCountries": [ ],
+"shippingRates": [ ],
+"paymentStatus": "unpaid",
+"paymentIntentId": "clcl69c7m0011jhtrfs04kwfw",
+"account": { }
+}
+]
+Plugin de WordPress
+ONVO cuenta con un plugin para páginas web desarrolladas con WordPress y que cuenten con el plugin de WooCommerce. Seguí los siguientes pasos para habilitar pagos a través de ONVO Pay en tu e-commerce:
+
+Prerrequisitos
+Versión de WordPress: 4.0 o mayor.
+Versión de PHP: 7.1 o mayor.
+Plugin de WooCommerce: previamente instalado.
+Instalación mediante dashboard
+Dirigite a la sección de "Add New Plugin" del dashboard de WordPress.
+Buscá el plugin "ONVO Pay".
+Completá el proceso de instalación y luego activalo.
+Dirigite al dashboard de ONVO y obtené tu LLAVE SECRETA y LLAVE PÚBLICA ubicada en la sección de Integración a la medida.
+Ingresá a la configuración de ONVO Pay o dentro de la configuración de WooCommerce seleccioná "Payments" y "ONVO Pay".
+Ingresá la LLAVE SECRETA y LLAVE PÚBLICA del paso 4 en sus respectivos campos.
+Empezá a recibir pagos.
+Instalación directa en servidor
+Descargá el plugin y subilo al directorio /wp-content/plugins/
+Activá el plugin en la sección "Plugins" del dashboard de WordPress.
+Dirigite al dashboard de ONVO y obtené tu LLAVE SECRETA y LLAVE PÚBLICA ubicada en la sección de Integración a la medida.
+Ingresá a la configuración de ONVO Pay o dentro de la configuración de WooCommerce, seleccioná "Payments" y luego "ONVO Pay".
+Ingresá la LLAVE SECRETA y LLAVE PÚBLICA del paso 4 en sus respectivos campos.
+Empezá a recibir pagos.
+WooCommerce Settings Example
+Extensión para Magento
+ONVO cuenta con una extensión para sitios que utilizan la plataforma Magento. Seguí los siguientes pasos para habilitar pagos a través de ONVO Pay en tu e-commerce:
+
+Pre-requisitos
+
+Versión de Magento: 2.4.3 o mayor.
+Versión de PHP: 7.1 o mayor.
+Instalación
+
+Via composer:
+
+Desde la consola dirígete al 'root' del proyecto de Magento
+Ejecutar: composer require logeek-io/onvo-magento
+Via directorio
+
+Descargá el plugin y subilo al directorio /app/code/ONVO/
+Ejecutá los siguientes comandos de Magento:
+
+bin/magento setup:upgrade
+
+bin/magento setup:di:compile
+
+Ve a la sección de administración de Magento 'Stores -> Configuration -> Sales -> Payment Methods -> ONVO Pay'
+
+Copiá y pegá la LLAVE SECRETA desde el dashboard de ONVO
+Copiá y pegá la LLAVE PÚBLICA desde el dashboard de ONVO
+Es importante que las llaves que se ingresen en este paso sean las que reflejen el modo en el que se quiere probar, es decir modo de prueba o modo live.
+
+Webhooks
+ONVO utiliza webhooks para notificar a tu aplicación cuando se produce algún resultado procesando una Intención de Pago o un Cargo recurrente. Para esto, debés configurar una URL de callback en tu cuenta de ONVO, a la cual enviaremos una petición POST cada vez que se procese alguno de estos eventos. La petición POST incluirá un JSON, donde encontrarás un atributo type que corresponderá a alguno de los eventos soportados y un atributo data de tipo objeto con toda la información del evento.
+
+Tipo de eventos
+payment-intent.succeeded:
+Ocurre cuando una intención de pago se procesa con éxito.
+
+payment-intent.failed:
+Ocurre cuando una intención de pago falla por alguna razón.
+
+payment-intent.deferred:
+Ocurre cuando una intención de pago se procesa, pero el estado del pago aún se encuentra en espera de ser aprobado(SINPE).
+
+subscription.renewal.succeeded:
+Ocurre cuando un cargo recurrente se renueva con éxito.
+
+subscription.renewal.failed:
+Ocurre cuando la renovación de un cargo recurrente falla por alguna razón.
+
+checkout-session.succeeded:
+Ocurre cuando un checkout session se procesa con éxito.
+
+mobile-transfer.received:
+_ Este evento no es requerido para la integración de SINPE Móvil. Se genera como notificación adicional de nua transferencia entrante recibida, pero no corresponde a un pago satisfactorio_. Este evento solamente se envía si el comercio cuenta con la funcionalidad específica activa. No es un evento que se envíe por defecto, sino que se activa bajo solicitud del comercio. Para más información, contactá a nuestro equipo de soporte.
+
+Requisitos del webhook
+Para que ONVO pueda enviarte la información del evento a tus webhooks es necesario que sigás estos pasos:
+
+Primero identificá de la lista de eventos disponibles los que considerés necesarios para recibir notificaciones.
+Creá un endpoint que funcione como webhook (HTTP/HTTPS) en tu servidor, recuerda que enviamos un POST.
+Registrá el webhook creado dentro del Dashboard de ONVO, bajo la sección de Desarrolladores.
+Empezá a escuchar los eventos según su tipo, recordá que debés responder con un estado HTTP 2xx para asegurar que el webhook funcione correctamente.
+ONVO Desarrolladores
+Seguridad
+Como un medio de seguridad, cada vez que agregas un Webhook se le asigna un Secret, el cual vas a poder obtener desde el Dashboard, justo al lado de la descripción en la sección de Desarrolladores. Este valor lo puedes utilizar para verificar que el origen de la solicitud que estas obteniendo proviene de ONVO, se incluye como un valor adicional en los headers del evento, utilizando la llave X-Webhook-Secret.
+
+Webhook Secret Header example
+Tipos de respuestas
+En caso de error en alguno de los eventos, encontrarás, como parte del objeto en el Payload, un atributo llamado error de tipo Objeto. Este va a contener varios campos, uno de ellos es message, el cual proporcionará la descripción verbal del error y en algunos otros casos vas a poder identificar el código (code) y tipo (type) del error
+
+Respuesta de un evento exitoso
+Evento: payment-intent.succeeded
+
+type	
+string
+Identificador del evento recibido por el weebhook.
+
+data	
+object
+El payload con la información de la intención de pago procesada exitosamente.
+
+
+Copy
+Expand allCollapse all
+{
+"type": "payment-intent.succeeded",
+"data": {
+"id": "clcl69c7m0011jbapzx04kwfw",
+"accountId": "cx2bdw8ez0078agdp6dgpwfm3",
+"currency": "USD",
+"amount": 500000,
+"status": "succeeded",
+"confirmationAttempts": 1,
+"description": "Checkout Session Intent",
+"createdAt": "2023-01-01T21:21:10.587Z",
+"customer": {},
+"metadata": {}
+}
+}
+Evento: subscription.renewal.succeeded
+
+type	
+string
+Identificador del evento recibido por el weebhook.
+
+data	
+object
+El payload con la información de la subscripción renovada exitosamente.
+
+
+Copy
+Expand allCollapse all
+{
+"type": "subscription.renewal.succeeded",
+"data": {
+"mode": "test",
+"status": "paid",
+"currency": "USD",
+"description": "Cargo recurrente de prueba",
+"total": 2099,
+"periodStart": "2022-06-12T21:21:10.587Z",
+"periodEnd": "2022-06-12T21:21:10.587Z",
+"subscriptionId": "clcl69c7m0011jbapzx04kwfw",
+"paymentIntentId": "clcl69c7m0011jhtrfs04kwfw",
+"customerId": "cl502zv0d0127ebdp3zt27651"
+}
+}
+Evento: checkout-session.succeeded
+
+type	
+string
+Identificador del evento recibido por el weebhook.
+
+data	
+object
+El payload con la información del checkout session procesado exitosamente.
+
+
+Copy
+Expand allCollapse all
+{
+"type": "checkout-session.succeeded",
+"data": {
+"mode": "test",
+"paymentStatus": "paid",
+"currency": "CRC",
+"url": "Cargo recurrente de prueba",
+"amountTotal": 350000,
+"createdAt": "2022-06-12T21:21:10.587Z",
+"metadata": {},
+"customer": {},
+"lineItems": []
+}
+}
+Respuesta de eventos con error
+Evento: payment-intent.failed
+
+type	
+string
+Identificador del evento recibido por el weebhook.
+
+data	
+object
+El payload con la información de la intención de pago y la descripción del error.
+
+
+Copy
+Expand allCollapse all
+{
+"type": "payment-intent.failed",
+"data": {
+"id": "clcl69c7m0011jbapzx04kwfw",
+"accountId": "cx2bdw8ez0078agdp6dgpwfm3",
+"currency": "USD",
+"status": "requires_payment_method",
+"customer": {},
+"metadata": {},
+"error": {}
+}
+}
+Evento: subscription.renewal.failed
+
+type	
+string
+Identificador del evento recibido por el weebhook.
+
+data	
+object
+El payload con la información de la renovación del cargo recurrente fallido y la descripción del error.
+
+
+Copy
+Expand allCollapse all
+{
+"type": "subscription.renewal.failed",
+"data": {
+"accountId": "cx2bdw8ez0078agdp6dgpwfm3",
+"subscriptionId": "clcl69c7m0011jbapzx04kwfw",
+"paymentIntentId": "",
+"currency": "USD",
+"invoiceStatus": "open",
+"subscriptionStatus": "active",
+"attemptCount": 1,
+"invoicePeriodStart": "2023-01-10T21:21:10.587Z",
+"invoicePeriodEnd": "2023-01-11T21:21:10.587Z",
+"periodStart": "2023-01-10T21:21:10.587Z",
+"periodEnd": "2023-01-11T21:21:10.587Z",
+"nextPaymentAttempt": "2023-02-11T21:21:10.587Z",
+"lastPaymentAttempt": "2023-01-01T21:21:10.587Z",
+"customer": {},
+"error": {}
+}
+}
+Respuesta de eventos a la espera de resultado
+Evento: payment-intent.deferred
+
+type	
+string
+Identificador del evento recibido por el weebhook.
+
+data	
+object
+El payload con la información de la intención de pago y la descripción del error.
+
+
+Copy
+Expand allCollapse all
+{
+"type": "payment-intent.deferred",
+"data": {
+"id": "zl3ky7muu702201lfd4td647c",
+"mode": "test",
+"currency": "USD",
+"status": "processing",
+"confirmationAttempts": 1,
+"description": "Deferred Checkout Session Intent with SINPE",
+"createdAt": "2023-01-01T21:21:10.587Z",
+"amount": 500000,
+"baseAmount": 868,
+"paymentMethodId": "cl502zv0d0127ebdp3zt27651",
+"customerId": "cl502zv0d0127ebdp3zt27651",
+"accountId": "cx2bdw8ez0078agdp6dgpwfm3"
+}
+}
+Respuesta de eventos SINPE Móvil
+Evento: mobile-transfer.received
+
+type	
+string
+Identificador del evento recibido por el weebhook.
+
+data	
+object
+El payload con la información de la transferencia SINPE Móvil recibida.
+
+
+Copy
+Expand allCollapse all
+{
+"type": "mobile-transfer.received",
+"data": {
+"amount": 1450000,
+"currency": "CRC",
+"description": "PAG0 DE SERVICIOS",
+"SINPERefNumber": "2025110312774577852010",
+"originId": "01-1393-1919",
+"originName": "JUAN PEREZ CASTRO",
+"originPhone": "72940567",
+"authorizationDate": "2025-01-01T21:21:10.587Z"
+}
+}
