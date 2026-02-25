@@ -1,4 +1,4 @@
-# Guía de Instalación PWA - PayLinks
+# Guía de Instalación PWA - Paylink
 
 ## 📱 Instalar en iPhone/iPad (iOS Safari)
 
@@ -14,12 +14,12 @@
 
    ![Share button location](https://support.apple.com/library/content/dam/edam/applecare/images/en_US/iOS/ios15-safari-share-button.png)
 
-4. Editá el nombre si querés (ej: "PayLinks")
+4. Editá el nombre si querés (ej: "Paylink")
 5. Tocá **"Agregar"** en la esquina superior derecha
 
 ### Paso 3: Usar la App
 1. Volvé a la pantalla de inicio de tu iPhone
-2. Verás el ícono de PayLinks (azul con símbolo de link)
+2. Verás el ícono de Paylink (azul con símbolo de link)
 3. Tocá el ícono para abrir la app **en modo standalone** (sin la barra de Safari)
 
 ---
@@ -75,7 +75,7 @@ Cuando abrís la app desde el ícono:
 
 ## 🗑️ Desinstalar el PWA
 
-1. Mantené presionado el ícono de PayLinks en la pantalla de inicio
+1. Mantené presionado el ícono de Paylink en la pantalla de inicio
 2. Tocá **"Eliminar App"** o **"Remove App"**
 3. Confirmá **"Eliminar de inicio"** (no afecta tu cuenta web)
 

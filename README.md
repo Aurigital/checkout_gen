@@ -1,4 +1,4 @@
-# PayLinks - Generador de Links de Pago
+# Paylink - Generador de Links de Pago
 
 Aplicación PWA para generar links de pago con **ONVO** y **TiloPay** (Costa Rica).
 

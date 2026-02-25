@@ -5,13 +5,13 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'PayLinks - Generador de Links de Pago',
+  title: 'Paylink - Generador de Links de Pago',
   description: 'Genera links de pago de TiloPay y ONVO',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'PayLinks',
+    title: 'Paylink',
   },
 }
 

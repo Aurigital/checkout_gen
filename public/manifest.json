@@ -1,6 +1,6 @@
 {
-  "name": "PayLinks - Generador de Links de Pago",
-  "short_name": "PayLinks",
+  "name": "Paylink - Generador de Links de Pago",
+  "short_name": "Paylink",
   "description": "Genera links de pago de TiloPay y ONVO",
   "start_url": "/",
   "display": "standalone",

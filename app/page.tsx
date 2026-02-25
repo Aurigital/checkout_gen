@@ -168,6 +168,7 @@ export default function Home() {
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null)
 
   const addToast = useCallback((t: Omit<Toast, 'id'>) => {
     const id = Date.now()
@@ -188,44 +189,10 @@ export default function Home() {
       return
     }
 
-    // TiloPay: Open payment link directly
+    // TiloPay: Show payment link in modal
     if (provider === 'tilopay') {
       const tilopayLink = 'https://tp.cr/s/MTExODk1'
-
-      // Copy to clipboard FIRST (iOS Safari requires this in direct user event flow)
-      let clipboardSuccess = false
-      try {
-        // Use synchronous copy for iOS compatibility
-        const textArea = document.createElement('textarea')
-        textArea.value = tilopayLink
-        textArea.style.position = 'fixed'
-        textArea.style.left = '-999999px'
-        textArea.style.top = '-999999px'
-        document.body.appendChild(textArea)
-        textArea.focus()
-        textArea.select()
-        clipboardSuccess = document.execCommand('copy')
-        document.body.removeChild(textArea)
-      } catch (err) {
-        // Fallback to async clipboard API
-        try {
-          await navigator.clipboard.writeText(tilopayLink)
-          clipboardSuccess = true
-        } catch {
-          clipboardSuccess = false
-        }
-      }
-
-      // Open link in new tab
-      window.open(tilopayLink, '_blank')
-
-      // Show toast
-      addToast({
-        type: 'success',
-        message: clipboardSuccess ? 'Link copiado al portapapeles' : 'Link de pago abierto',
-        url: tilopayLink,
-      })
-
+      setGeneratedLink(tilopayLink)
       return
     }
 
@@ -258,35 +225,8 @@ export default function Home() {
         throw new Error(data.error ?? 'Error generando el link')
       }
 
-      // Copy to clipboard (iOS-compatible method)
-      let clipboardSuccess = false
-      try {
-        // Try synchronous copy first (works better on iOS)
-        const textArea = document.createElement('textarea')
-        textArea.value = data.url
-        textArea.style.position = 'fixed'
-        textArea.style.left = '-999999px'
-        textArea.style.top = '-999999px'
-        document.body.appendChild(textArea)
-        textArea.focus()
-        textArea.select()
-        clipboardSuccess = document.execCommand('copy')
-        document.body.removeChild(textArea)
-      } catch (err) {
-        // Fallback to async API
-        try {
-          await navigator.clipboard.writeText(data.url)
-          clipboardSuccess = true
-        } catch {
-          clipboardSuccess = false
-        }
-      }
-
-      addToast({
-        type: 'success',
-        message: clipboardSuccess ? 'Link copiado al portapapeles' : 'Link generado',
-        url: data.url,
-      })
+      // Show link in modal
+      setGeneratedLink(data.url)
     } catch (err) {
       addToast({
         type: 'error',
@@ -299,9 +239,104 @@ export default function Home() {
 
   const currencySymbol = currency === 'USD' ? '$' : '₡'
 
+  const handleCopyLink = () => {
+    if (!generatedLink) return
+
+    const textArea = document.createElement('textarea')
+    textArea.value = generatedLink
+    textArea.style.position = 'fixed'
+    textArea.style.left = '-9999px'
+    document.body.appendChild(textArea)
+    textArea.select()
+
+    try {
+      const success = document.execCommand('copy')
+      addToast({
+        type: 'success',
+        message: success ? 'Link copiado al portapapeles' : 'No se pudo copiar',
+      })
+    } catch {
+      addToast({
+        type: 'error',
+        message: 'Error al copiar',
+      })
+    } finally {
+      document.body.removeChild(textArea)
+    }
+  }
+
+  const handleShareLink = () => {
+    if (!generatedLink) return
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'Link de Pago',
+        url: generatedLink,
+      }).catch(() => {
+        // User cancelled share
+      })
+    } else {
+      window.open(generatedLink, '_blank')
+    }
+  }
+
   return (
     <>
       <LogoutButton />
+
+      {/* Link Modal */}
+      {generatedLink && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => setGeneratedLink(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">Link de Pago Generado</h2>
+              <button
+                onClick={() => setGeneratedLink(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Link Display */}
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <p className="text-xs font-medium text-gray-500 mb-2">Link</p>
+              <p className="text-sm text-gray-900 break-all font-mono">{generatedLink}</p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleCopyLink}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 active:bg-primary-800 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copiar Link
+              </button>
+              <button
+                onClick={handleShareLink}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                Compartir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast stack */}
       <div
@@ -325,7 +360,7 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Checkout Gen</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Paylink</h1>
             <p className="text-gray-500 text-sm mt-1">Generador de Links de Pago</p>
           </div>
 
