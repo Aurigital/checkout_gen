@@ -188,13 +188,26 @@ export default function Home() {
       return
     }
 
-    // TiloPay: Redirect to admin panel to create payment link manually
+    // TiloPay: Open payment link directly
     if (provider === 'tilopay') {
-      window.open('https://app.tilopay.com/admin/link-de-pago', '_blank')
-      addToast({
-        type: 'success',
-        message: 'Abriendo panel de TiloPay para crear el link manualmente',
-      })
+      const tilopayLink = 'https://tp.cr/s/MTExODk1'
+      window.open(tilopayLink, '_blank')
+
+      // Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(tilopayLink)
+        addToast({
+          type: 'success',
+          message: 'Link copiado al portapapeles',
+          url: tilopayLink,
+        })
+      } catch {
+        addToast({
+          type: 'success',
+          message: 'Link de pago abierto',
+          url: tilopayLink,
+        })
+      }
       return
     }
 
