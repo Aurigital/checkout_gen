@@ -151,19 +151,19 @@ checkout-gen/
 - Suscripciones: ✅
 - Redirect flow completo: ✅
 
-### 🟡 TiloPay — Workaround Manual
-**Status:** Integración manual mediante redirect al admin panel.
+### ✅ TiloPay — Link de Pago Abierto
+**Status:** Funcional con link de pago pre-creado.
 
 **Cómo funciona:**
 1. Usuario llena el formulario y selecciona TiloPay
-2. Click en "Generar" → abre el panel de admin de TiloPay en nueva pestaña
-3. Usuario crea el link de pago manualmente desde la UI
-4. Copia el link generado
+2. Click en "Generar" → abre `https://tp.cr/s/MTExODk1` en nueva pestaña
+3. Link se copia automáticamente al portapapeles
+4. Cliente puede usar este link universal para todos los pagos
 
-**Razón:** TiloPay no provee un API público para generar "links de pago abierto" programáticamente. La funcionalidad existe en el admin panel pero no está documentada como endpoint API.
+**Nota:** Se utiliza un "link de pago abierto" único creado desde el admin de TiloPay. Este link acepta cualquier monto que ingrese el cliente.
 
-**Estado de investigación:**
-Ver detalles completos en [TILOPAY_RESEARCH.md](./TILOPAY_RESEARCH.md).
+**Estado de API:**
+TiloPay no provee un API público para generar links de pago programáticamente. Ver detalles en [TILOPAY_RESEARCH.md](./TILOPAY_RESEARCH.md).
 
 ## 🐛 Troubleshooting
 
