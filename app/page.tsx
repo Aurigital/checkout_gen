@@ -191,23 +191,41 @@ export default function Home() {
     // TiloPay: Open payment link directly
     if (provider === 'tilopay') {
       const tilopayLink = 'https://tp.cr/s/MTExODk1'
+
+      // Copy to clipboard FIRST (iOS Safari requires this in direct user event flow)
+      let clipboardSuccess = false
+      try {
+        // Use synchronous copy for iOS compatibility
+        const textArea = document.createElement('textarea')
+        textArea.value = tilopayLink
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-999999px'
+        textArea.style.top = '-999999px'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        clipboardSuccess = document.execCommand('copy')
+        document.body.removeChild(textArea)
+      } catch (err) {
+        // Fallback to async clipboard API
+        try {
+          await navigator.clipboard.writeText(tilopayLink)
+          clipboardSuccess = true
+        } catch {
+          clipboardSuccess = false
+        }
+      }
+
+      // Open link in new tab
       window.open(tilopayLink, '_blank')
 
-      // Copy to clipboard
-      try {
-        await navigator.clipboard.writeText(tilopayLink)
-        addToast({
-          type: 'success',
-          message: 'Link copiado al portapapeles',
-          url: tilopayLink,
-        })
-      } catch {
-        addToast({
-          type: 'success',
-          message: 'Link de pago abierto',
-          url: tilopayLink,
-        })
-      }
+      // Show toast
+      addToast({
+        type: 'success',
+        message: clipboardSuccess ? 'Link copiado al portapapeles' : 'Link de pago abierto',
+        url: tilopayLink,
+      })
+
       return
     }
 
@@ -240,22 +258,35 @@ export default function Home() {
         throw new Error(data.error ?? 'Error generando el link')
       }
 
-      // Copy to clipboard
+      // Copy to clipboard (iOS-compatible method)
+      let clipboardSuccess = false
       try {
-        await navigator.clipboard.writeText(data.url)
-        addToast({
-          type: 'success',
-          message: 'Link copiado al portapapeles',
-          url: data.url,
-        })
-      } catch {
-        // Clipboard permission denied — still show the link
-        addToast({
-          type: 'success',
-          message: 'Link generado',
-          url: data.url,
-        })
+        // Try synchronous copy first (works better on iOS)
+        const textArea = document.createElement('textarea')
+        textArea.value = data.url
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-999999px'
+        textArea.style.top = '-999999px'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        clipboardSuccess = document.execCommand('copy')
+        document.body.removeChild(textArea)
+      } catch (err) {
+        // Fallback to async API
+        try {
+          await navigator.clipboard.writeText(data.url)
+          clipboardSuccess = true
+        } catch {
+          clipboardSuccess = false
+        }
       }
+
+      addToast({
+        type: 'success',
+        message: clipboardSuccess ? 'Link copiado al portapapeles' : 'Link generado',
+        url: data.url,
+      })
     } catch (err) {
       addToast({
         type: 'error',
