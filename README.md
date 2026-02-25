@@ -151,16 +151,18 @@ checkout-gen/
 - Suscripciones: ✅
 - Redirect flow completo: ✅
 
-### ⏳ TiloPay — Pendiente
-**Status:** La integración actual NO funciona.
+### 🟡 TiloPay — Workaround Manual
+**Status:** Integración manual mediante redirect al admin panel.
+
+**Cómo funciona:**
+1. Usuario llena el formulario y selecciona TiloPay
+2. Click en "Generar" → abre el panel de admin de TiloPay en nueva pestaña
+3. Usuario crea el link de pago manualmente desde la UI
+4. Copia el link generado
 
 **Razón:** TiloPay no provee un API público para generar "links de pago abierto" programáticamente. La funcionalidad existe en el admin panel pero no está documentada como endpoint API.
 
-**Acción requerida:**
-1. Contactar a TiloPay support (sac@tilopay.com)
-2. Preguntar por API de payment links
-3. Por ahora, usar solo ONVO
-
+**Estado de investigación:**
 Ver detalles completos en [TILOPAY_RESEARCH.md](./TILOPAY_RESEARCH.md).
 
 ## 🐛 Troubleshooting
