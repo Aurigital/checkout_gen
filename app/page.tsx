@@ -188,7 +188,17 @@ export default function Home() {
       return
     }
 
-    // Convert to centavos
+    // TiloPay: Redirect to admin panel to create payment link manually
+    if (provider === 'tilopay') {
+      window.open('https://app.tilopay.com/admin/link-de-pago', '_blank')
+      addToast({
+        type: 'success',
+        message: 'Abriendo panel de TiloPay para crear el link manualmente',
+      })
+      return
+    }
+
+    // ONVO flow (existing)
     const amountInCents = Math.round(numericAmount * 100)
 
     const baseUrl = window.location.origin
