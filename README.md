@@ -7,10 +7,10 @@ Aplicación PWA para generar links de pago con **ONVO** y **TiloPay** (Costa Ric
 - ✅ **Autenticación con contraseña única** (httpOnly cookie + Edge middleware)
 - ✅ **Integración ONVO** — Pagos únicos y suscripciones
 - ⏳ **Integración TiloPay** — Pendiente (ver [TILOPAY_RESEARCH.md](./TILOPAY_RESEARCH.md))
-- ✅ **PWA instalable** — Funciona como app nativa en móviles
+- ✅ **PWA instalable** — Funciona como app nativa en móviles ([Guía de instalación](./PWA_INSTALL_GUIDE.md))
 - ✅ **UI mobile-first** — Diseño optimizado para dispositivos móviles
 - ✅ **Toast notifications** — Feedback visual con auto-dismiss
-- ✅ **Copy to clipboard** — Un clic para copiar el link generado
+- ✅ **Copy to clipboard** — Compatible con iOS Safari
 
 ## 📦 Tech Stack
 
@@ -175,6 +175,33 @@ TiloPay no provee un API público para generar links de pago programáticamente.
 
 ### PWA no se instala en móvil
 → Debe estar en HTTPS. En local, PWA solo funciona en `localhost`. En producción, Vercel provee HTTPS automáticamente.
+
+### El link no se copia al portapapeles en iOS
+→ El fix ya está implementado usando `document.execCommand('copy')`. Asegurate de tener la última versión deployada en Vercel.
+
+## 📱 Usar como PWA (App Instalable)
+
+Esta app está optimizada para funcionar como Progressive Web App (PWA). Podés instalarla en tu dispositivo y usarla como una app nativa.
+
+### iOS (iPhone/iPad)
+Ver la guía completa paso a paso: **[PWA_INSTALL_GUIDE.md](./PWA_INSTALL_GUIDE.md)**
+
+**Resumen rápido:**
+1. Abrí la app en **Safari** (no Chrome)
+2. Tocá el botón **Compartir** (cuadrado con flecha)
+3. Seleccioná **"Agregar a inicio"**
+4. Confirmá y listo — el ícono aparecerá en tu pantalla de inicio
+
+**Beneficios:**
+- ✅ Abre en pantalla completa (sin barra de Safari)
+- ✅ Funciona como app nativa
+- ✅ Más rápido (caché local)
+- ✅ Ícono en la pantalla de inicio
+
+### Android
+1. Abrí la app en Chrome
+2. Tocá el menú (⋮) → **"Agregar a pantalla de inicio"** o **"Instalar app"**
+3. Confirmá
 
 ## 📄 License
 
